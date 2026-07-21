@@ -27,3 +27,9 @@ web/next-env.d.ts
 # Env
 .env*
 !.env.example
+!**/.env.example
+
+# Agent / scrape scratch
+.firecrawl/
+.playwright-cli/
+docs/report-ocr/

@@ -1,0 +1,758 @@
+/* Joke themes — keyed off html[data-theme]. Default = current look (no overrides). */
+
+/* -------------------------------------------------------------------------- */
+/* Shared settings UI                                                          */
+/* -------------------------------------------------------------------------- */
+
+.theme-gear {
+  color: var(--color-ink-soft);
+  border: 0;
+  background: transparent;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: color var(--duration) var(--ease-out);
+}
+
+.theme-gear:hover {
+  color: var(--color-ink);
+}
+
+.theme-settings-link {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+}
+
+.theme-dialog {
+  margin: auto;
+  padding: 0;
+  border: 1px solid var(--color-rule);
+  border-radius: 0.35rem;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  max-width: min(22rem, calc(100vw - 2rem));
+  width: 100%;
+  box-shadow: 0 12px 40px color-mix(in srgb, var(--color-ink) 18%, transparent);
+}
+
+.theme-dialog::backdrop {
+  background: color-mix(in srgb, var(--color-ink) 35%, transparent);
+}
+
+.theme-dialog-panel {
+  padding: 1.15rem 1.2rem 1.25rem;
+}
+
+.theme-dialog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.theme-dialog-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.theme-dialog-close {
+  border: 0;
+  background: transparent;
+  color: var(--color-ink-faint);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 0.25rem;
+}
+
+.theme-dialog-close:hover {
+  color: var(--color-ink);
+}
+
+.theme-dialog-lead {
+  margin: 0.35rem 0 1rem;
+  font-size: 0.95rem;
+  color: var(--color-ink-faint);
+}
+
+.theme-fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.theme-option {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.7rem 0.75rem;
+  border: 1px solid var(--color-rule);
+  border-radius: 0.25rem;
+  cursor: pointer;
+  background: var(--color-paper);
+  transition:
+    border-color var(--duration) var(--ease-out),
+    background var(--duration) var(--ease-out);
+}
+
+.theme-option:hover,
+.theme-option.is-active {
+  border-color: var(--color-ink-soft);
+  background: var(--color-paper-2);
+}
+
+.theme-option input {
+  margin-top: 0.2rem;
+  accent-color: var(--color-accent);
+}
+
+.theme-option-text {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.theme-option-label {
+  font-weight: 600;
+  font-size: 1.02rem;
+}
+
+.theme-option-desc {
+  font-size: 0.88rem;
+  color: var(--color-ink-faint);
+  line-height: 1.35;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Theme chrome (hidden unless a joke theme activates it) */
+.theme-only {
+  display: none;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Typewriter                                                                  */
+/* -------------------------------------------------------------------------- */
+
+[data-theme='typewriter'] {
+  --color-paper: #f4f1e6;
+  --color-paper-2: #ebe6d6;
+  --color-paper-3: #e0d9c4;
+  --color-ink: #1a1a18;
+  --color-ink-soft: #3a3934;
+  --color-ink-faint: #5c5a52;
+  --color-rule: #9a9585;
+  --color-accent: #2a2a28;
+  --color-accent-soft: #ddd6c2;
+  --color-focus: #1a1a18;
+
+  --font-display: var(--font-geist-mono), ui-monospace, 'Courier New', Courier, monospace;
+  --font-body: var(--font-geist-mono), ui-monospace, 'Courier New', Courier, monospace;
+  --font-ui: var(--font-geist-mono), ui-monospace, 'Courier New', Courier, monospace;
+  --font-mono: var(--font-geist-mono), ui-monospace, 'Courier New', Courier, monospace;
+
+  --tw-letter: 0.02em;
+}
+
+[data-theme='typewriter'] body {
+  font-family: var(--font-ui);
+  letter-spacing: var(--tw-letter);
+  background-color: var(--color-paper);
+  background-image:
+    radial-gradient(ellipse 40% 18% at 12% 8%, color-mix(in srgb, #fff 55%, transparent), transparent 70%),
+    radial-gradient(ellipse 28% 14% at 78% 22%, color-mix(in srgb, #fffef8 70%, transparent), transparent 65%),
+    radial-gradient(ellipse 22% 10% at 55% 70%, color-mix(in srgb, #faf8f0 50%, transparent), transparent 60%),
+    linear-gradient(180deg, #f6f3ea 0%, #f1ecdf 100%);
+  -webkit-font-smoothing: auto;
+  text-rendering: auto;
+}
+
+[data-theme='typewriter'] .story-title,
+[data-theme='typewriter'] .rail-title,
+[data-theme='typewriter'] .prose-story,
+[data-theme='typewriter'] .prose-story-plain,
+[data-theme='typewriter'] .btn-primary,
+[data-theme='typewriter'] .btn-secondary,
+[data-theme='typewriter'] .nav-link {
+  font-family: var(--font-mono);
+  letter-spacing: 0.015em;
+}
+
+[data-theme='typewriter'] .story-title {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+[data-theme='typewriter'] .rail-title {
+  letter-spacing: 0.14em;
+}
+
+[data-theme='typewriter'] .btn-primary,
+[data-theme='typewriter'] .btn-secondary {
+  border-radius: 0;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+[data-theme='typewriter'] .btn-primary {
+  background: var(--color-ink);
+  color: var(--color-paper);
+  box-shadow: 2px 2px 0 color-mix(in srgb, var(--color-ink) 25%, transparent);
+}
+
+[data-theme='typewriter'] .btn-secondary {
+  border-width: 1px;
+  border-style: solid;
+}
+
+[data-theme='typewriter'] header,
+[data-theme='typewriter'] footer {
+  border-color: var(--color-ink);
+}
+
+[data-theme='typewriter'] .hairline,
+[data-theme='typewriter'] hr {
+  border: 0;
+  border-top: 1px dashed var(--color-rule);
+  height: 0;
+  background: none;
+}
+
+/* ASCII-framed business cards */
+[data-theme='typewriter'] .biz-card {
+  background: var(--color-paper);
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  position: relative;
+}
+
+[data-theme='typewriter'] .biz-card:hover {
+  transform: none;
+  border-color: transparent;
+}
+
+[data-theme='typewriter'] .biz-card-inner {
+  margin: 0.65rem 0.55rem 0.7rem;
+  padding: 1rem 0.95rem 0.85rem;
+  border-left: 1px solid var(--color-ink);
+  border-right: 1px solid var(--color-ink);
+  background: color-mix(in srgb, var(--color-paper) 92%, #fff);
+  position: relative;
+}
+
+[data-theme='typewriter'] .biz-card-inner::before,
+[data-theme='typewriter'] .biz-card-inner::after {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--color-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+[data-theme='typewriter'] .biz-card-inner::before {
+  content: '+------------------------------------------+';
+  position: absolute;
+  top: -0.55rem;
+  left: -1px;
+  right: -1px;
+}
+
+[data-theme='typewriter'] .biz-card-inner::after {
+  content: '+------------------------------------------+';
+  position: absolute;
+  bottom: -0.55rem;
+  left: -1px;
+  right: -1px;
+}
+
+[data-theme='typewriter'] .biz-card-stamp {
+  border-radius: 0;
+  border-style: dashed;
+  transform: rotate(6deg);
+  font-size: 0.55rem;
+}
+
+[data-theme='typewriter'] .biz-card-photo {
+  border-radius: 0;
+  border-color: var(--color-ink);
+}
+
+[data-theme='typewriter'] .biz-card-name {
+  letter-spacing: 0.02em;
+}
+
+[data-theme='typewriter'] .biz-card-rule,
+[data-theme='typewriter'] .biz-card-foot {
+  border-style: dashed;
+  border-color: var(--color-rule);
+}
+
+[data-theme='typewriter'] .archive-photo {
+  border-radius: 0;
+  border-color: var(--color-ink);
+  border-style: solid;
+}
+
+/* Subtle white-out / correction-fluid blotches */
+[data-theme='typewriter'] body::before,
+[data-theme='typewriter'] body::after {
+  content: '';
+  position: fixed;
+  pointer-events: none;
+  z-index: 40;
+  opacity: 0.22;
+  mix-blend-mode: soft-light;
+}
+
+[data-theme='typewriter'] body::before {
+  width: 7rem;
+  height: 1.35rem;
+  top: 18%;
+  left: 8%;
+  background: #fffcf5;
+  transform: rotate(-3deg);
+  box-shadow:
+    2.5rem 0.4rem 0 -0.15rem #fffcf5,
+    0.8rem 1.1rem 0 -0.35rem color-mix(in srgb, #fffcf5 80%, transparent);
+  filter: blur(0.4px);
+}
+
+[data-theme='typewriter'] body::after {
+  width: 5.5rem;
+  height: 1.1rem;
+  top: 62%;
+  right: 10%;
+  background: #fffcf5;
+  transform: rotate(4deg);
+  box-shadow: -1.8rem 0.6rem 0 -0.2rem #fffcf5;
+  filter: blur(0.5px);
+}
+
+[data-theme='typewriter'] .theme-dialog {
+  border-radius: 0;
+  border-color: var(--color-ink);
+  font-family: var(--font-mono);
+}
+
+[data-theme='typewriter'] .theme-option {
+  border-radius: 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* 1994 — intentionally horrible                                               */
+/* -------------------------------------------------------------------------- */
+
+[data-theme='retro94'] {
+  --color-paper: #c0c0c0;
+  --color-paper-2: #d4d0c8;
+  --color-paper-3: #ffffff;
+  --color-ink: #000000;
+  --color-ink-soft: #000080;
+  --color-ink-faint: #808080;
+  --color-rule: #808080;
+  --color-accent: #ff00ff;
+  --color-accent-soft: #ffff00;
+  --color-focus: #0000ff;
+
+  --font-display: 'Comic Sans MS', 'Comic Sans', 'Chalkboard SE', cursive;
+  --font-body: 'Times New Roman', Times, serif;
+  --font-ui: 'Times New Roman', Times, serif;
+  --font-mono: 'Courier New', Courier, monospace;
+}
+
+[data-theme='retro94'] body {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  line-height: 1.45;
+  color: #000;
+  background-color: #000080;
+  background-image:
+    linear-gradient(45deg, #ff00ff 25%, transparent 25%),
+    linear-gradient(-45deg, #ff00ff 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #00ffff 75%),
+    linear-gradient(-45deg, transparent 75%, #00ffff 75%);
+  background-size: 24px 24px;
+  background-position:
+    0 0,
+    0 12px,
+    12px -12px,
+    -12px 0;
+  -webkit-font-smoothing: auto;
+}
+
+[data-theme='retro94'] a {
+  color: #0000ee;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+[data-theme='retro94'] a:visited {
+  color: #551a8b;
+}
+
+[data-theme='retro94'] a:hover {
+  color: #ff0000;
+  background: #ffff00;
+}
+
+[data-theme='retro94'] .story-title {
+  font-family: var(--font-display);
+  letter-spacing: 0;
+  color: #ff0000;
+  text-shadow: 2px 2px 0 #ffff00;
+  font-weight: 700;
+}
+
+[data-theme='retro94'] .rail-title {
+  font-family: var(--font-mono);
+  color: #000080;
+  letter-spacing: 0.08em;
+  background: #ffff00;
+  display: inline-block;
+  padding: 0.1rem 0.35rem;
+  border: 2px outset #c0c0c0;
+}
+
+[data-theme='retro94'] header {
+  background: #c0c0c0;
+  border-bottom: 3px ridge #808080;
+  box-shadow: inset 0 1px 0 #fff;
+}
+
+[data-theme='retro94'] footer {
+  background: #c0c0c0;
+  border-top: 3px ridge #808080;
+}
+
+[data-theme='retro94'] .nav-link {
+  color: #0000ee;
+  text-decoration: underline;
+  font-family: var(--font-body);
+}
+
+[data-theme='retro94'] .nav-link:hover {
+  color: #ff0000;
+  background: #ffff00;
+}
+
+[data-theme='retro94'] .btn-primary {
+  border-radius: 0;
+  background: #0000ee;
+  color: #ffff00;
+  border: 3px outset #c0c0c0;
+  font-family: var(--font-display);
+  text-decoration: none;
+  letter-spacing: 0;
+  text-transform: none;
+  font-weight: 700;
+}
+
+[data-theme='retro94'] .btn-primary:hover {
+  background: #ff00ff;
+  color: #fff;
+}
+
+[data-theme='retro94'] .btn-secondary {
+  border-radius: 0;
+  background: #c0c0c0;
+  color: #000;
+  border: 3px outset #c0c0c0;
+  font-family: var(--font-display);
+  text-decoration: none;
+}
+
+[data-theme='retro94'] .btn-secondary:hover {
+  background: #ffff00;
+  color: #000;
+  border-style: inset;
+}
+
+[data-theme='retro94'] main {
+  background: #ffffff;
+  margin: 0.75rem;
+  padding: 0.5rem;
+  border: 4px ridge #c0c0c0;
+}
+
+[data-theme='retro94'] .hairline,
+[data-theme='retro94'] hr:not(.biz-card-rule) {
+  border: 0;
+  height: 6px;
+  background: linear-gradient(
+    to right,
+    #ff0000,
+    #ff7f00,
+    #ffff00,
+    #00ff00,
+    #0000ff,
+    #4b0082,
+    #9400d3,
+    #ff0000
+  );
+}
+
+/* Show 1994 chrome */
+[data-theme='retro94'] .theme-only-retro94 {
+  display: block;
+}
+
+[data-theme='retro94'] .retro94-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  background: #c0c0c0;
+  border-bottom: 2px outset #fff;
+  padding: 0.35rem 0.75rem;
+  font-family: 'MS Sans Serif', 'Segoe UI', Tahoma, sans-serif;
+  font-size: 0.8rem;
+  color: #000;
+}
+
+[data-theme='retro94'] .retro94-toolbar a {
+  color: #000080;
+  text-decoration: underline;
+}
+
+[data-theme='retro94'] .retro94-marquee {
+  display: block;
+  overflow: hidden;
+  background: #000080;
+  color: #ffff00;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  border-bottom: 2px solid #ff00ff;
+  padding: 0.35rem 0;
+  white-space: nowrap;
+}
+
+[data-theme='retro94'] .retro94-marquee-track {
+  display: inline-block;
+  padding-left: 100%;
+  animation: retro94-marquee 22s linear infinite;
+}
+
+@keyframes retro94-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-theme='retro94'] .retro94-marquee-track {
+    animation: none;
+    padding-left: 0.75rem;
+    white-space: normal;
+  }
+}
+
+[data-theme='retro94'] .retro94-under-construction {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.5rem 0;
+  padding: 0.25rem 0.5rem;
+  background: #ffff00;
+  border: 3px dashed #ff0000;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  color: #000;
+}
+
+[data-theme='retro94'] .retro94-uc-gif {
+  width: 1.35rem;
+  height: 1.35rem;
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      #ff0,
+      #ff0 3px,
+      #f00 3px,
+      #f00 6px
+    );
+  border: 1px solid #000;
+  animation: retro94-blink 1s steps(2, end) infinite;
+}
+
+@keyframes retro94-blink {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-theme='retro94'] .retro94-uc-gif {
+    animation: none;
+  }
+}
+
+[data-theme='retro94'] .retro94-counter {
+  display: inline-block;
+  margin-top: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  background: #000;
+  color: #0f0;
+  padding: 0.2rem 0.45rem;
+  border: 2px inset #808080;
+  letter-spacing: 0.12em;
+}
+
+/* Ugly table / border business cards */
+[data-theme='retro94'] .biz-card {
+  background: #ffffcc;
+  border: 4px ridge #c0c0c0;
+  box-shadow: 4px 4px 0 #808080;
+  border-radius: 0;
+}
+
+[data-theme='retro94'] .biz-card:hover {
+  transform: none;
+  border-style: groove;
+  background: #ffff99;
+}
+
+[data-theme='retro94'] .biz-card-inner {
+  border: 1px solid #000080;
+  background: #ffffcc;
+}
+
+[data-theme='retro94'] .biz-card-stamp {
+  border-radius: 0;
+  border: 2px solid #ff0000;
+  color: #ff0000;
+  background: #fff;
+  font-family: var(--font-display);
+  transform: rotate(-12deg);
+  opacity: 1;
+}
+
+[data-theme='retro94'] .biz-card-name {
+  font-family: var(--font-display);
+  color: #0000ee;
+  letter-spacing: 0;
+  text-decoration: underline;
+}
+
+[data-theme='retro94'] .biz-card-photo {
+  border: 3px inset #c0c0c0;
+  background: #c0c0c0;
+}
+
+[data-theme='retro94'] .biz-card-org {
+  background: #000080;
+  color: #fff;
+  padding: 0.1rem 0.35rem;
+  display: inline-block;
+}
+
+[data-theme='retro94'] .biz-card-meta {
+  display: table;
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.75rem;
+}
+
+[data-theme='retro94'] .biz-card-meta div {
+  display: table-row;
+  grid-template-columns: none;
+}
+
+[data-theme='retro94'] .biz-card-meta dt,
+[data-theme='retro94'] .biz-card-meta dd {
+  display: table-cell;
+  border: 1px solid #808080;
+  padding: 0.25rem 0.4rem;
+  background: #fff;
+}
+
+[data-theme='retro94'] .biz-card-meta dt {
+  background: #c0c0c0;
+  font-weight: 700;
+  color: #000;
+  text-transform: none;
+  letter-spacing: 0;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  width: 5rem;
+}
+
+[data-theme='retro94'] .archive-photo {
+  border: 4px ridge #c0c0c0;
+  border-radius: 0;
+  background: #c0c0c0;
+}
+
+[data-theme='retro94'] .prose-story,
+[data-theme='retro94'] .prose-story-plain {
+  font-family: var(--font-body);
+  background: #ffffee;
+  padding: 0.5rem;
+  border: 1px solid #808080;
+}
+
+[data-theme='retro94'] .theme-dialog {
+  border: 4px ridge #c0c0c0;
+  border-radius: 0;
+  background: #c0c0c0;
+  font-family: 'MS Sans Serif', Tahoma, sans-serif;
+}
+
+[data-theme='retro94'] .theme-dialog::backdrop {
+  background: #000080aa;
+}
+
+[data-theme='retro94'] .theme-dialog-title {
+  font-family: var(--font-display);
+  color: #000080;
+}
+
+[data-theme='retro94'] .theme-option {
+  border: 2px outset #c0c0c0;
+  border-radius: 0;
+  background: #d4d0c8;
+}
+
+[data-theme='retro94'] .theme-option.is-active {
+  border-style: inset;
+  background: #ffff00;
+}
+
+[data-theme='retro94'] .theme-gear {
+  color: #000080;
+  border: 2px outset #c0c0c0;
+  background: #c0c0c0;
+}
+
+[data-theme='retro94'] .rise-in,
+[data-theme='retro94'] .rise-in-delay-1,
+[data-theme='retro94'] .rise-in-delay-2,
+[data-theme='retro94'] .rise-in-delay-3 {
+  animation: none;
+}
