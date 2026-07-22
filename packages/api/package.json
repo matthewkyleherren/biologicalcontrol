@@ -13,6 +13,7 @@
     "@biologicalcontrol/shared": "*",
     "@clerk/backend": "^2.0.0",
     "@google-cloud/storage": "^7.16.0",
+    "ably": "^2.25.0",
     "hono": "^4.8.3",
     "svix": "^1.98.0",
     "zod": "^3.25.67"

@@ -7,6 +7,7 @@ import {ThemeSettings} from '@/components/ThemeSettings'
 const links = [
   {href: '/people', label: 'People'},
   {href: '/stories', label: 'Stories'},
+  {href: '/chat', label: 'Messages'},
   {href: '/programme', label: 'Programme'},
   {href: '/galleries', label: 'Photos'},
 ]

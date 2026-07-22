@@ -1,4 +1,4 @@
-import {and, desc, eq, inArray} from 'drizzle-orm'
+import {and, desc, eq, ilike, inArray, isNull, ne} from 'drizzle-orm'
 import {Hono} from 'hono'
 import {z} from 'zod'
 import type {Database} from '@biologicalcontrol/db'
@@ -7,11 +7,13 @@ import {
   conversations,
   messageAttachments,
   messages,
+  users,
 } from '@biologicalcontrol/db'
 import {createMessageBodySchema} from '@biologicalcontrol/shared'
 import type {AppEnv} from '../middleware/auth'
 import {requireAuth} from '../middleware/auth'
 import {ensureAppUser} from '../services/users'
+import {createAblyTokenRequest, publishConversationMessage} from '../services/ably'
 
 const createDmBody = z.object({
   peerUserId: z.string().uuid(),
@@ -23,8 +25,107 @@ const createGroupBody = z.object({
   compoundLabel: z.string().max(120).optional(),
 })
 
+async function enrichConversation(db: Database, convo: typeof conversations.$inferSelect, viewerId: string) {
+  const members = await db.query.conversationMembers.findMany({
+    where: eq(conversationMembers.conversationId, convo.id),
+  })
+  const memberUsers = await db.query.users.findMany({
+    where: inArray(
+      users.id,
+      members.map((m) => m.userId)
+    ),
+  })
+  const byId = Object.fromEntries(memberUsers.map((u) => [u.id, u]))
+  const peers = members
+    .filter((m) => m.userId !== viewerId)
+    .map((m) => ({
+      id: m.userId,
+      displayName: byId[m.userId]?.displayName ?? 'Friend',
+    }))
+
+  const latest = await db.query.messages.findFirst({
+    where: eq(messages.conversationId, convo.id),
+    orderBy: [desc(messages.createdAt)],
+  })
+
+  const title =
+    convo.title ||
+    (convo.type === 'dm'
+      ? peers.map((p) => p.displayName).join(', ') || 'Direct message'
+      : 'Group')
+
+  return {
+    ...convo,
+    title,
+    peers,
+    memberCount: members.length,
+    lastMessage: latest
+      ? {
+          id: latest.id,
+          body: latest.body,
+          senderId: latest.senderId,
+          createdAt: latest.createdAt,
+        }
+      : null,
+  }
+}
+
 export function chatRoutes(db: Database | null) {
   const app = new Hono<AppEnv>()
+
+  app.get('/chat/token', async (c) => {
+    const auth = requireAuth(c)
+    if (!auth) return c.json({error: 'Sign in required'}, 401)
+    if (!db) return c.json({error: 'Database not configured'}, 503)
+
+    const user = await ensureAppUser(db, auth)
+    const memberships = await db.query.conversationMembers.findMany({
+      where: eq(conversationMembers.userId, user.id),
+    })
+    const tokenRequest = await createAblyTokenRequest(
+      c.get('env'),
+      user.id,
+      memberships.map((m) => m.conversationId)
+    )
+    if (!tokenRequest) {
+      return c.json({error: 'Realtime not configured', mode: 'poll'}, 200)
+    }
+    return c.json({tokenRequest, clientId: user.id})
+  })
+
+  app.get('/users/search', async (c) => {
+    const auth = requireAuth(c)
+    if (!auth) return c.json({error: 'Sign in required'}, 401)
+    if (!db) return c.json({error: 'Database not configured'}, 503)
+
+    const user = await ensureAppUser(db, auth)
+    const q = (c.req.query('q') ?? '').trim()
+    if (q.length < 1) {
+      const recent = await db.query.users.findMany({
+        where: ne(users.id, user.id),
+        orderBy: [desc(users.updatedAt)],
+        limit: 30,
+      })
+      return c.json({
+        users: recent.map((u) => ({
+          id: u.id,
+          displayName: u.displayName,
+          howConnected: null as string | null,
+        })),
+      })
+    }
+
+    const rows = await db.query.users.findMany({
+      where: and(ne(users.id, user.id), ilike(users.displayName, `%${q}%`)),
+      limit: 30,
+    })
+    return c.json({
+      users: rows.map((u) => ({
+        id: u.id,
+        displayName: u.displayName,
+      })),
+    })
+  })
 
   app.get('/conversations', async (c) => {
     const auth = requireAuth(c)
@@ -42,7 +143,8 @@ export function chatRoutes(db: Database | null) {
       where: inArray(conversations.id, ids),
       orderBy: [desc(conversations.updatedAt)],
     })
-    return c.json({conversations: rows})
+    const enriched = await Promise.all(rows.map((row) => enrichConversation(db, row, user.id)))
+    return c.json({conversations: enriched})
   })
 
   app.post('/conversations/dm', async (c) => {
@@ -56,6 +158,11 @@ export function chatRoutes(db: Database | null) {
       return c.json({error: 'Cannot DM yourself'}, 400)
     }
 
+    const peer = await db.query.users.findFirst({
+      where: eq(users.id, body.peerUserId),
+    })
+    if (!peer) return c.json({error: 'Person not found'}, 404)
+
     const myMemberships = await db.query.conversationMembers.findMany({
       where: eq(conversationMembers.userId, user.id),
     })
@@ -64,13 +171,16 @@ export function chatRoutes(db: Database | null) {
         where: eq(conversations.id, membership.conversationId),
       })
       if (!convo || convo.type !== 'dm') continue
-      const peer = await db.query.conversationMembers.findFirst({
+      const peerMem = await db.query.conversationMembers.findFirst({
         where: and(
           eq(conversationMembers.conversationId, convo.id),
           eq(conversationMembers.userId, body.peerUserId)
         ),
       })
-      if (peer) return c.json({conversation: convo})
+      if (peerMem) {
+        const enriched = await enrichConversation(db, convo, user.id)
+        return c.json({conversation: enriched})
+      }
     }
 
     const [convo] = await db
@@ -86,7 +196,8 @@ export function chatRoutes(db: Database | null) {
       {conversationId: convo!.id, userId: body.peerUserId, role: 'member'},
     ])
 
-    return c.json({conversation: convo}, 201)
+    const enriched = await enrichConversation(db, convo!, user.id)
+    return c.json({conversation: enriched}, 201)
   })
 
   app.post('/conversations/group', async (c) => {
@@ -116,7 +227,31 @@ export function chatRoutes(db: Database | null) {
       }))
     )
 
-    return c.json({conversation: convo}, 201)
+    const enriched = await enrichConversation(db, convo!, user.id)
+    return c.json({conversation: enriched}, 201)
+  })
+
+  app.get('/conversations/:id', async (c) => {
+    const auth = requireAuth(c)
+    if (!auth) return c.json({error: 'Sign in required'}, 401)
+    if (!db) return c.json({error: 'Database not configured'}, 503)
+
+    const user = await ensureAppUser(db, auth)
+    const conversationId = c.req.param('id')
+    const membership = await db.query.conversationMembers.findFirst({
+      where: and(
+        eq(conversationMembers.conversationId, conversationId),
+        eq(conversationMembers.userId, user.id)
+      ),
+    })
+    if (!membership) return c.json({error: 'Not found'}, 404)
+
+    const convo = await db.query.conversations.findFirst({
+      where: eq(conversations.id, conversationId),
+    })
+    if (!convo) return c.json({error: 'Not found'}, 404)
+
+    return c.json({conversation: await enrichConversation(db, convo, user.id)})
   })
 
   app.get('/conversations/:id/messages', async (c) => {
@@ -135,12 +270,31 @@ export function chatRoutes(db: Database | null) {
     if (!membership) return c.json({error: 'Not found'}, 404)
 
     const rows = await db.query.messages.findMany({
-      where: eq(messages.conversationId, conversationId),
+      where: and(eq(messages.conversationId, conversationId), isNull(messages.deletedAt)),
       orderBy: [desc(messages.createdAt)],
       limit: 100,
     })
 
-    return c.json({messages: rows.reverse()})
+    const visible = rows.reverse()
+
+    const senderIds = Array.from(new Set(visible.map((m) => m.senderId)))
+    const senders =
+      senderIds.length > 0
+        ? await db.query.users.findMany({where: inArray(users.id, senderIds)})
+        : []
+    const senderNames = Object.fromEntries(senders.map((s) => [s.id, s.displayName]))
+
+    await db
+      .update(conversationMembers)
+      .set({lastReadAt: new Date(), updatedAt: new Date()})
+      .where(eq(conversationMembers.id, membership.id))
+
+    return c.json({
+      messages: visible.map((m) => ({
+        ...m,
+        senderName: senderNames[m.senderId] ?? 'Friend',
+      })),
+    })
   })
 
   app.post('/conversations/:id/messages', async (c) => {
@@ -169,7 +323,11 @@ export function chatRoutes(db: Database | null) {
         eq(messages.clientId, body.clientId)
       ),
     })
-    if (existing) return c.json({message: existing})
+    if (existing) {
+      return c.json({
+        message: {...existing, senderName: user.displayName},
+      })
+    }
 
     const [message] = await db
       .insert(messages)
@@ -195,8 +353,14 @@ export function chatRoutes(db: Database | null) {
       .set({updatedAt: new Date()})
       .where(eq(conversations.id, conversationId))
 
-    // TODO: Ably publish to conversation:{id} when ABLY_API_KEY is set
-    return c.json({message}, 201)
+    const payload = {
+      ...message!,
+      senderName: user.displayName,
+    }
+
+    await publishConversationMessage(c.get('env'), conversationId, payload)
+
+    return c.json({message: payload}, 201)
   })
 
   return app

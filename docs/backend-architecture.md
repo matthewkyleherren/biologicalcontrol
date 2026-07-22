@@ -478,15 +478,15 @@ Record on device
 - Contribute story (text) via API → Sanity draft (replace ad-hoc `web` routes gradually).
 - Basic “tagged in folklore” from Sanity webhook mirror.
 
-### Phase 2 — Voice stories (**soon after auth — high audience value**)
-
-- Record UI (web + mobile), R2 audio, Deepgram/Whisper job, review/edit/approve, editor publish to Sanity.
-- EN + FR language hint; simple consent copy.
-- Same-device helper affordances (big buttons, clear states).
-
-### Phase 3 — Chat
+### Phase 2 — Chat
 
 - DM + groups, Ably, read cursors, image attachments, push notifications, report/block.
+
+### Phase 3 — Voice stories (**high audience value**)
+
+- Record UI (web + mobile), R2/GCS audio, Deepgram/Whisper job, review/edit/approve, editor publish to Sanity.
+- EN + FR language hint; simple consent copy.
+- Same-device helper affordances (big buttons, clear states).
 
 ### Phase 4 — Bulk photos
 
