@@ -1,6 +1,6 @@
 import {eq} from 'drizzle-orm'
 import {Hono} from 'hono'
-import {Webhooks} from 'svix'
+import {Webhook} from 'svix'
 import {z} from 'zod'
 import type {Database} from '@biologicalcontrol/db'
 import {profiles, storyPersonTags, users} from '@biologicalcontrol/db'
@@ -41,7 +41,7 @@ export function webhooksRoutes(db: Database | null) {
     const rawBody = await c.req.text()
 
     if (env.CLERK_WEBHOOK_SECRET) {
-      const wh = new Webhooks(env.CLERK_WEBHOOK_SECRET)
+      const wh = new Webhook(env.CLERK_WEBHOOK_SECRET)
       try {
         wh.verify(rawBody, {
           'svix-id': c.req.header('svix-id') ?? '',
