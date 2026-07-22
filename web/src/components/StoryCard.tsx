@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import {urlFor} from '@/sanity/image'
+import {StoryByline, type StoryNarrator} from '@/components/stories/StoryByline'
 
 type StoryCardProps = {
   title: string
@@ -8,24 +9,16 @@ type StoryCardProps = {
   excerpt?: string | null
   year?: number | null
   location?: string | null
-  narrator?: {name?: string; slug?: string} | null
+  narrator?: StoryNarrator | null
   mainImage?: {alt?: string} | null
   featured?: boolean
 }
 
-export function StoryCard({
-  title,
-  slug,
-  excerpt,
-  year,
-  location,
-  narrator,
-  mainImage,
-}: StoryCardProps) {
+export function StoryCard({title, slug, excerpt, year, location, narrator, mainImage}: StoryCardProps) {
   const imageUrl = mainImage ? urlFor(mainImage).width(900).height(560).url() : null
 
   return (
-    <article className="group grid min-w-0 gap-4 border-b border-rule py-8 last:border-b-0 md:grid-cols-[1.4fr_1fr] md:gap-8">
+    <article className="group grid min-w-0 gap-4 border-b border-rule py-8 last:border-b-0 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] md:gap-8">
       <div className="min-w-0">
         <p className="rail-title">
           {[year, location].filter(Boolean).join(' · ') || 'Undated'}
@@ -40,18 +33,7 @@ export function StoryCard({
             {excerpt}
           </p>
         ) : null}
-        {narrator?.name ? (
-          <p className="mt-4 text-sm text-ink-faint">
-            Told by{' '}
-            {narrator.slug ? (
-              <Link href={`/people/${narrator.slug}`} className="text-ink-soft underline decoration-rule hover:text-accent">
-                {narrator.name}
-              </Link>
-            ) : (
-              narrator.name
-            )}
-          </p>
-        ) : null}
+        <StoryByline narrator={narrator} className="mt-4" />
       </div>
       {imageUrl ? (
         <Link href={`/stories/${slug}`} className="relative block min-w-0 overflow-hidden rounded-sm">

@@ -11,13 +11,13 @@ export const FEATURED_STORIES_QUERY = defineQuery(`*[_type == "story" && feature
 
 export const LATEST_STORIES_QUERY = defineQuery(`*[_type == "story"] | order(publishedAt desc)[0...8]{
   _id, title, "slug": slug.current, excerpt, year, location, era,
-  "narrator": narrator->{name, "slug": slug.current},
+  "narrator": narrator->{name, "slug": slug.current, portrait},
   mainImage
 }`)
 
 export const ALL_STORIES_QUERY = defineQuery(`*[_type == "story"] | order(year asc){
   _id, title, "slug": slug.current, excerpt, year, location, era,
-  "narrator": narrator->{name, "slug": slug.current},
+  "narrator": narrator->{name, "slug": slug.current, portrait},
   "people": people[]->{name, "slug": slug.current},
   mainImage
 }`)

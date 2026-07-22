@@ -1,9 +1,10 @@
 import type {Metadata} from 'next'
-import Link from 'next/link'
 import {client} from '@/sanity/client'
 import {GALLERIES_QUERY} from '@/sanity/queries'
 import {fallbackHome} from '@/lib/fallback-content'
 import type {GallerySummary} from '@/lib/types'
+import {ButtonLink, EmptyState, PageHeader} from '@/components/ui'
+import {GalleryCard, type GalleryCover} from '@/components/galleries/GalleryCard'
 
 export const metadata: Metadata = {
   title: 'Galleries',
@@ -13,43 +14,53 @@ export const metadata: Metadata = {
 
 export const revalidate = 60
 
+/** `GALLERIES_QUERY` adds the first photograph and a real count to the summary. */
+type GalleryListItem = GallerySummary & {cover?: GalleryCover}
+
 export default async function GalleriesPage() {
-  const galleries = (await client.fetch(GALLERIES_QUERY).catch(() => [])) as GallerySummary[]
-  const list: GallerySummary[] = galleries.length ? galleries : fallbackHome.galleries
+  const galleries = (await client.fetch(GALLERIES_QUERY).catch(() => [])) as GalleryListItem[]
+  const list: GalleryListItem[] = galleries.length ? galleries : fallbackHome.galleries
 
   return (
-    <main className="mx-auto max-w-[var(--site-max)] px-5 py-12 md:px-8 md:py-16">
-      <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-        <div>
-          <p className="rail-title">Photographs</p>
-          <h1 className="story-title mt-3 text-[2.15rem] sm:text-4xl md:text-5xl">Galleries</h1>
-          <p className="mt-4 max-w-[36rem] text-xl leading-relaxed text-ink-soft">
-            Field sites, insectaries, release flights, workshops, house parties — dig out the
-            envelopes and name who is in the frame. Family albums count.
-          </p>
+    <main className="container pb-14 md:pb-20">
+      <PageHeader
+        title="Photographs"
+        subtitle="Field sites, insectaries, releases, and the compounds people lived in."
+        action={
+          <ButtonLink href="/contribute" variant="secondary" icon="camera">
+            Share photos
+          </ButtonLink>
+        }
+      />
+
+      {list.length ? (
+        <div className="grid gap-4 sm:grid-cols-2 md:gap-5 lg:grid-cols-3">
+          {list.map((gallery) => (
+            <GalleryCard
+              key={gallery._id}
+              slug={gallery.slug}
+              title={gallery.title}
+              year={gallery.year}
+              location={gallery.location}
+              photoCount={gallery.photoCount}
+              cover={gallery.cover}
+            />
+          ))}
         </div>
-        <Link href="/contribute" className="btn-secondary shrink-0">
-          Share photos
-        </Link>
-      </div>
-      <div className="mt-10 grid gap-6 sm:grid-cols-2">
-        {list.map((gallery) => (
-          <Link
-            key={gallery._id}
-            href={`/galleries/${gallery.slug}`}
-            className="group min-w-0 rounded-sm border border-rule bg-paper p-6 transition-colors hover:border-ink"
-          >
-            <p className="rail-title">
-              {[gallery.year, gallery.location].filter(Boolean).join(' · ') || 'Gallery'}
-            </p>
-            <h2 className="story-title mt-3 text-2xl group-hover:text-accent">{gallery.title}</h2>
-            {gallery.description ? (
-              <p className="mt-3 text-lg text-ink-soft">{gallery.description}</p>
-            ) : null}
-            <p className="mt-5 text-sm text-ink-faint">{gallery.photoCount ?? 0} photographs</p>
-          </Link>
-        ))}
-      </div>
+      ) : (
+        <EmptyState
+          icon="photos"
+          title="No galleries yet"
+          action={
+            <ButtonLink href="/contribute" icon="camera">
+              Share photos
+            </ButtonLink>
+          }
+        >
+          A gallery gathers photographs from one place or one year — a field site, an insectary, a
+          Saturday on the compound. Send yours and we will help name who is in the frame.
+        </EmptyState>
+      )}
     </main>
   )
 }

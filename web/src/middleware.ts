@@ -1,6 +1,6 @@
 import {clerkMiddleware, createRouteMatcher} from '@clerk/nextjs/server'
 
-const isProtectedPage = createRouteMatcher(['/me(.*)', '/chat(.*)'])
+const isProtectedPage = createRouteMatcher(['/me(.*)', '/chat(.*)', '/settings(.*)'])
 
 export default clerkMiddleware(async (auth, request) => {
   if (request.nextUrl.pathname.startsWith('/api/')) {

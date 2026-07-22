@@ -1,7 +1,6 @@
 import Link from 'next/link'
-import Image from 'next/image'
 import {urlFor} from '@/sanity/image'
-import {inventoryCode} from '@/lib/types'
+import {Avatar} from '@/components/ui'
 
 type PersonCardProps = {
   name: string
@@ -12,55 +11,46 @@ type PersonCardProps = {
   portrait?: {alt?: string} | null
 }
 
+/**
+ * A restrained card — a quiet nod to the old business-card idea (hairline
+ * rule, mono meta row) without the invented inventory code, rotated stamp,
+ * or "Station TBD" filler. Missing fields are simply omitted.
+ */
 export function PersonCard({name, slug, role, yearsActive, location, portrait}: PersonCardProps) {
-  const imageUrl = portrait ? urlFor(portrait).width(240).height(240).url() : null
-  const code = inventoryCode(slug)
-  const station = location || 'Station TBD'
+  const imageUrl = portrait ? urlFor(portrait).width(160).height(160).fit('crop').url() : null
+  const hasMeta = Boolean(yearsActive || location)
 
   return (
-    <Link href={`/people/${slug}`} className="biz-card group block min-w-0">
-      <div className="biz-card-inner">
-        <div className="biz-card-stamp" aria-hidden>
-          IITA
+    <Link
+      href={`/people/${slug}`}
+      className="card card--interactive group flex min-w-0 flex-col gap-3 p-4"
+    >
+      <div className="flex items-center gap-3">
+        <Avatar name={name} src={imageUrl} size="lg" />
+        <div className="min-w-0 flex-1">
+          <p className="text-lg leading-tight font-semibold text-ink [overflow-wrap:anywhere] group-hover:text-accent">
+            {name}
+          </p>
+          {role ? <p className="truncate-1 mt-0.5 text-base text-ink-soft">{role}</p> : null}
         </div>
-        <div className="flex items-start justify-between gap-3">
-          <p className="biz-card-inv">{code}</p>
-          <p className="biz-card-org">Biol. Control · IITA</p>
-        </div>
-        <hr className="biz-card-rule" />
-        <div className="mt-4 flex gap-4">
-          <div className="biz-card-photo shrink-0">
-            {imageUrl ? (
-              <Image
-                src={imageUrl}
-                alt={(portrait as {alt?: string})?.alt || name}
-                width={96}
-                height={96}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <span className="biz-card-initial">{name.slice(0, 1)}</span>
-            )}
-          </div>
-          <div className="min-w-0 flex-1">
-            <h3 className="biz-card-name group-hover:text-accent">{name}</h3>
-            <p className="biz-card-role">{role || 'Programme member'}</p>
-            <dl className="biz-card-meta">
-              <div>
-                <dt>Station</dt>
-                <dd>{station}</dd>
-              </div>
-              {yearsActive ? (
-                <div>
-                  <dt>Years</dt>
-                  <dd>{yearsActive}</dd>
-                </div>
-              ) : null}
-            </dl>
-          </div>
-        </div>
-        <p className="biz-card-foot">Open profile →</p>
       </div>
+      {hasMeta ? (
+        <dl className="flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-rule pt-3 font-mono text-[0.8125rem] text-ink-faint">
+          {yearsActive ? (
+            <div>
+              <dt className="sr-only">Years active</dt>
+              <dd>{yearsActive}</dd>
+            </div>
+          ) : null}
+          {yearsActive && location ? <span aria-hidden="true">·</span> : null}
+          {location ? (
+            <div className="min-w-0">
+              <dt className="sr-only">Location</dt>
+              <dd className="truncate-1">{location}</dd>
+            </div>
+          ) : null}
+        </dl>
+      ) : null}
     </Link>
   )
 }

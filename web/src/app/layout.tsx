@@ -1,9 +1,12 @@
-import type {Metadata} from 'next'
+import type {Metadata, Viewport} from 'next'
 import {Geist, Geist_Mono} from 'next/font/google'
 import {ClerkProvider} from '@clerk/nextjs'
-import {SiteHeader} from '@/components/SiteHeader'
-import {SiteFooter} from '@/components/SiteFooter'
+import {SiteHeader} from '@/components/shell/SiteHeader'
+import {SiteFooter} from '@/components/shell/SiteFooter'
+import {BottomTabs} from '@/components/shell/BottomTabs'
+import {UnreadProvider} from '@/components/shell/UnreadProvider'
 import {ThemeProvider} from '@/components/ThemeProvider'
+import {ThemeChrome} from '@/components/ThemeChrome'
 import {THEME_INIT_SCRIPT} from '@/lib/themes'
 import './globals.css'
 import './themes.css'
@@ -28,6 +31,14 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://biologicalcontrol.org'),
 }
 
+/** `viewport-fit: cover` so the bottom tab bar can clear the home indicator. */
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: '#f7f7f4',
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -43,10 +54,20 @@ export default function RootLayout({
       >
         <body className="flex min-h-full flex-col bg-paper text-ink antialiased">
           <script dangerouslySetInnerHTML={{__html: THEME_INIT_SCRIPT}} />
+          <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:z-[100] focus:m-2 focus:rounded focus:bg-ink focus:px-4 focus:py-2 focus:text-paper">
+            Skip to content
+          </a>
           <ThemeProvider>
-            <SiteHeader />
-            {children}
-            <SiteFooter />
+            <UnreadProvider>
+              <ThemeChrome slot="top" />
+              <SiteHeader />
+              <div id="main" className="app-main has-tabbar">
+                {children}
+              </div>
+              <SiteFooter />
+              <ThemeChrome slot="bottom" />
+              <BottomTabs />
+            </UnreadProvider>
           </ThemeProvider>
         </body>
       </html>

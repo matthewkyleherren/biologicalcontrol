@@ -1,7 +1,8 @@
 import type {Metadata} from 'next'
 import {client} from '@/sanity/client'
 import {ALL_STORIES_QUERY} from '@/sanity/queries'
-import {StoryCard} from '@/components/StoryCard'
+import {PageHeader, ButtonLink} from '@/components/ui'
+import {StoriesExplorer} from '@/components/stories/StoriesExplorer'
 import {fallbackStories} from '@/lib/fallback-content'
 import type {StorySummary} from '@/lib/types'
 
@@ -18,19 +19,17 @@ export default async function StoriesPage() {
   const list: StorySummary[] = stories.length ? stories : fallbackStories
 
   return (
-    <main className="mx-auto max-w-[var(--site-max)] px-5 py-12 md:px-8 md:py-16">
-      <p className="rail-title">Archive</p>
-      <h1 className="story-title mt-3 text-[2.15rem] sm:text-4xl md:text-5xl">Stories</h1>
-      <p className="mt-4 max-w-[36rem] text-xl leading-relaxed text-ink-soft">
-        Short tellings from the field, the insectary, the air, and the compound after hours.
-        Folklore lives in detail — names, nights, jokes, near-misses. Staff and family voices
-        belong here equally.
-      </p>
-      <div className="mt-4">
-        {list.map((story) => (
-          <StoryCard key={story._id} {...story} slug={story.slug} />
-        ))}
-      </div>
+    <main className="container pb-16 md:pb-20">
+      <PageHeader
+        title="Stories"
+        subtitle="Short tellings from the field, the insectary, and the compound after hours."
+        action={
+          <ButtonLink href="/contribute" icon="compose">
+            Share a story
+          </ButtonLink>
+        }
+      />
+      <StoriesExplorer stories={list} />
     </main>
   )
 }

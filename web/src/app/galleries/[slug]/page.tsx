@@ -1,15 +1,18 @@
 import type {Metadata} from 'next'
 import Link from 'next/link'
-import Image from 'next/image'
 import {notFound} from 'next/navigation'
 import {client} from '@/sanity/client'
 import {GALLERY_QUERY} from '@/sanity/queries'
-import {urlFor} from '@/sanity/image'
 import {fallbackHome} from '@/lib/fallback-content'
+import {ButtonLink, EmptyState, PageHeader} from '@/components/ui'
+import {GalleryPhotos} from '@/components/galleries/GalleryPhotos'
+import {toLightboxPhotos, type SanityPhoto} from '@/components/galleries/photo-source'
 
 export const revalidate = 60
 
 type Props = {params: Promise<{slug: string}>}
+
+type TaggedPerson = {name?: string | null; slug?: string | null}
 
 export async function generateMetadata({params}: Props): Promise<Metadata> {
   const {slug} = await params
@@ -27,54 +30,75 @@ export default async function GalleryPage({params}: Props) {
 
   const data = gallery || {...fallback!, photos: [], people: []}
 
+  const photos = toLightboxPhotos(data.photos as SanityPhoto[] | null | undefined, data.title)
+  const people = ((data.people ?? []) as TaggedPerson[]).filter((person) => person?.slug)
+
+  const subtitle = [
+    [data.year, data.location].filter(Boolean).join(' · '),
+    photos.length === 1 ? '1 photograph' : `${photos.length} photographs`,
+  ]
+    .filter(Boolean)
+    .join(' · ')
+
   return (
-    <main className="mx-auto max-w-[var(--site-max)] px-5 py-12 md:px-8 md:py-16">
-      <Link href="/galleries" className="text-sm text-ink-faint hover:text-accent">
-        ← Galleries
-      </Link>
-      <p className="rail-title mt-8">
-        {[data.year, data.location].filter(Boolean).join(' · ')}
-      </p>
-      <h1 className="story-title mt-3 text-4xl md:text-5xl">{data.title}</h1>
+    <main className="container pb-14 md:pb-20">
+      <div className="pt-4">
+        <ButtonLink href="/galleries" variant="ghost" icon="back" className="-ml-3">
+          All galleries
+        </ButtonLink>
+      </div>
+
+      <PageHeader
+        title={data.title}
+        subtitle={subtitle}
+        action={
+          <ButtonLink href="/contribute" variant="secondary" icon="camera">
+            Share photos
+          </ButtonLink>
+        }
+      />
+
       {data.description ? (
-        <p className="mt-4 max-w-[40rem] text-xl leading-relaxed text-ink-soft">
+        <p className="max-w-[65ch] text-[1.0625rem] leading-relaxed text-ink-soft">
           {data.description}
         </p>
       ) : null}
 
-      {data.photos?.length ? (
-        <div className="mt-12 columns-1 gap-4 sm:columns-2 lg:columns-3">
-          {data.photos.map((photo: { _key?: string; alt?: string; caption?: string }, i: number) => {
-            const src = urlFor(photo).width(900).url()
-            return (
-              <figure key={photo._key || i} className="mb-4 break-inside-avoid">
-                <Image
-                  src={src}
-                  alt={photo.alt || data.title}
-                  width={900}
-                  height={700}
-                  className="h-auto w-full rounded-sm"
-                />
-                {photo.caption ? (
-                  <figcaption className="mt-2 text-sm text-ink-faint">{photo.caption}</figcaption>
-                ) : null}
-              </figure>
-            )
-          })}
-        </div>
-      ) : (
-        <div className="mt-12 rounded-sm border border-dashed border-rule bg-paper-2 px-6 py-16 text-center">
-          <p className=" text-lg text-ink-soft">
-            No photographs uploaded yet for this gallery.
-          </p>
-          <Link
-            href="/contribute"
-            className="mt-4 inline-block text-sm text-accent underline decoration-rule"
+      {people.length ? (
+        <section className="mt-6">
+          <h2 className="text-[1.0625rem] font-semibold text-ink">People in this gallery</h2>
+          <ul className="mt-3 flex flex-wrap gap-2">
+            {people.map((person) => (
+              <li key={person.slug}>
+                {/* `.chip` is unlayered, so the 44px tap target has to shout. */}
+                <Link href={`/people/${person.slug}`} className="chip min-h-11! px-4!">
+                  {person.name || person.slug}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      <section className="mt-8">
+        <h2 className="sr-only">Photographs</h2>
+        {photos.length ? (
+          <GalleryPhotos photos={photos} galleryTitle={data.title} />
+        ) : (
+          <EmptyState
+            icon="photos"
+            title="No photographs here yet"
+            action={
+              <ButtonLink href="/contribute" icon="camera">
+                Share photos
+              </ButtonLink>
+            }
           >
-            Add the first ones →
-          </Link>
-        </div>
-      )}
+            This gallery is waiting on its first pictures. Envelopes, slide boxes, and family albums
+            all count — send what you have and we will scan it.
+          </EmptyState>
+        )}
+      </section>
     </main>
   )
 }

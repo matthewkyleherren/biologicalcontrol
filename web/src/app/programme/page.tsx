@@ -6,6 +6,7 @@ import {client} from '@/sanity/client'
 import {PROGRAMME_QUERY} from '@/sanity/queries'
 import {fallbackProgramme, programmeSections} from '@/lib/fallback-content'
 import type {ProgrammeContent} from '@/lib/types'
+import {PageHeader} from '@/components/ui'
 
 export const metadata: Metadata = {
   title: 'The Programme',
@@ -62,15 +63,9 @@ export default async function ProgrammePage() {
 
   return (
     <main className="mx-auto max-w-[var(--measure-wide)] px-5 py-12 md:px-8 md:py-16">
-      <p className="rail-title">Background · easy & accurate</p>
-      <h1 className="story-title mt-3 text-[2.15rem] sm:text-4xl md:text-5xl">{programme.title}</h1>
-      {programme.lede ? (
-        <p className="mt-6 text-xl leading-relaxed text-ink-soft md:text-2xl">
-          {programme.lede}
-        </p>
-      ) : null}
+      <PageHeader title={programme.title} subtitle={programme.lede || undefined} />
 
-      <p className="mt-6 rounded-sm border border-rule bg-paper-2 px-4 py-3 text-base text-ink-soft">
+      <p className="rounded-sm border border-rule bg-paper-2 px-4 py-3 text-base text-ink-soft">
         New to the science? Start here. If you lived it — staff, spouse, kid on station,
         national-programme friend — skim the timeline, then{' '}
         <Link href="/contribute" className="text-accent underline decoration-rule">

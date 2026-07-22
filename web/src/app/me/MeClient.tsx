@@ -1,18 +1,25 @@
 'use client'
 
-import {useAuth} from '@clerk/nextjs'
 import {useCallback, useEffect, useMemo, useState} from 'react'
 import Link from 'next/link'
+import {useAuth, useUser} from '@clerk/nextjs'
 import {apiFetch} from '@/lib/api'
 import type {MeResponse} from '@biologicalcontrol/shared'
-
-type PersonOption = {
-  _id: string
-  name: string
-  slug: string
-  role?: string | null
-  yearsActive?: string | null
-}
+import {
+  Alert,
+  Avatar,
+  Button,
+  ButtonLink,
+  EmptyState,
+  Icon,
+  LoadingRegion,
+  Skeleton,
+  TabPanel,
+  Tabs,
+  type TabItem,
+} from '@/components/ui'
+import {ProfileHeader, ProfileHeaderSkeleton} from '@/components/profile/ProfileHeader'
+import {rosterFacts, type RosterPerson} from '@/components/profile/roster'
 
 type ClaimRow = {
   id: string
@@ -21,265 +28,268 @@ type ClaimRow = {
   note?: string | null
 }
 
-export function MeClient({people}: {people: PersonOption[]}) {
+type TabId = 'stories' | 'photos' | 'about'
+
+const TABS: ReadonlyArray<TabItem<TabId>> = [
+  {id: 'stories', label: 'Stories'},
+  {id: 'photos', label: 'Photos'},
+  {id: 'about', label: 'About'},
+]
+
+const ROLE_LABEL: Record<string, string> = {
+  editor: 'Editor',
+  admin: 'Administrator',
+}
+
+export function MeClient({roster}: {roster: RosterPerson[]}) {
   const {getToken, isLoaded} = useAuth()
+  const {user} = useUser()
   const [me, setMe] = useState<MeResponse | null>(null)
   const [claims, setClaims] = useState<ClaimRow[]>([])
-  const [pending, setPending] = useState<ClaimRow[]>([])
-  const [error, setError] = useState<string | null>(null)
-  const [saving, setSaving] = useState(false)
-  const [query, setQuery] = useState('')
-  const [selectedPersonId, setSelectedPersonId] = useState('')
-  const [claimNote, setClaimNote] = useState('')
-  const [displayName, setDisplayName] = useState('')
-  const [howConnected, setHowConnected] = useState('')
+  const [failed, setFailed] = useState(false)
+  const [reloading, setReloading] = useState(false)
+  const [tab, setTab] = useState<TabId>('stories')
 
   const tokenFn = useCallback(() => getToken(), [getToken])
 
   const load = useCallback(async () => {
-    setError(null)
     try {
       const profile = await apiFetch<MeResponse>('/me', {getAccessToken: tokenFn})
       setMe(profile)
-      setDisplayName(profile.displayName)
-      setHowConnected(profile.howConnected ?? '')
-      const mine = await apiFetch<{claims: ClaimRow[]}>('/claims', {
-        getAccessToken: tokenFn,
-      })
-      setClaims(mine.claims)
-      if (profile.role === 'editor' || profile.role === 'admin') {
-        const queue = await apiFetch<{claims: ClaimRow[]}>('/claims/pending', {
-          getAccessToken: tokenFn,
-        })
-        setPending(queue.claims)
-      } else {
-        setPending([])
+      setFailed(false)
+      try {
+        const mine = await apiFetch<{claims: ClaimRow[]}>('/claims', {getAccessToken: tokenFn})
+        setClaims(mine.claims ?? [])
+      } catch {
+        // A claim list that will not load must not blank out the profile above it.
+        setClaims([])
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not load profile')
+    } catch {
+      setFailed(true)
     }
   }, [tokenFn])
+
+  const retry = useCallback(async () => {
+    setReloading(true)
+    await load()
+    setReloading(false)
+  }, [load])
 
   useEffect(() => {
     if (isLoaded) void load()
   }, [isLoaded, load])
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    if (!q) return people.slice(0, 40)
-    return people
-      .filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) ||
-          (p.role ?? '').toLowerCase().includes(q) ||
-          (p.yearsActive ?? '').toLowerCase().includes(q)
-      )
-      .slice(0, 40)
-  }, [people, query])
+  const byId = useMemo(() => new Map(roster.map((p) => [p.id, p])), [roster])
 
-  async function saveProfile(e: React.FormEvent) {
-    e.preventDefault()
-    setSaving(true)
-    setError(null)
-    try {
-      await apiFetch('/me', {
-        method: 'PATCH',
-        getAccessToken: tokenFn,
-        body: {displayName, howConnected},
-      })
-      await load()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Save failed')
-    } finally {
-      setSaving(false)
-    }
+  const approvedPerson = me?.approvedClaimPersonId ? byId.get(me.approvedClaimPersonId) : undefined
+  const approvedUnknown = Boolean(me?.approvedClaimPersonId) && !approvedPerson
+  const pendingClaim = claims.find((c) => c.status === 'pending')
+  const pendingPerson = pendingClaim ? byId.get(pendingClaim.sanityPersonId) : undefined
+
+  const displayName = me?.displayName || user?.fullName || user?.username || 'Your profile'
+  const roleLabel = me ? ROLE_LABEL[me.role] : undefined
+
+  if (!isLoaded || (!me && !failed)) {
+    return (
+      <main className="container container-narrow py-8 md:py-12">
+        <LoadingRegion label="Loading your profile">
+          <ProfileHeaderSkeleton />
+          <Skeleton className="mt-10 h-20 w-full rounded-md" />
+          <Skeleton className="mt-8 h-11 w-full" />
+          <Skeleton className="mt-6 h-40 w-full rounded-md" />
+        </LoadingRegion>
+      </main>
+    )
   }
 
-  async function submitClaim(e: React.FormEvent) {
-    e.preventDefault()
-    if (!selectedPersonId) return
-    setSaving(true)
-    setError(null)
-    try {
-      await apiFetch('/claims', {
-        method: 'POST',
-        getAccessToken: tokenFn,
-        body: {sanityPersonId: selectedPersonId, note: claimNote || undefined},
-      })
-      setClaimNote('')
-      await load()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Claim failed')
-    } finally {
-      setSaving(false)
-    }
+  if (failed || !me) {
+    return (
+      <main className="container container-narrow py-8 md:py-12">
+        <ProfileHeader
+          media={<Avatar name={user?.fullName ?? undefined} src={user?.imageUrl} size="xl" ring />}
+          name={displayName}
+        />
+        <Alert tone="error" className="mt-8">
+          Your profile did not load. The archive may be offline for a moment — try again, and if it
+          keeps failing, write to an editor.
+        </Alert>
+        <div className="mt-4">
+          <Button variant="secondary" loading={reloading} onClick={() => void retry()}>
+            Try again
+          </Button>
+        </div>
+      </main>
+    )
   }
-
-  async function reviewClaim(id: string, status: 'approved' | 'rejected') {
-    setSaving(true)
-    try {
-      await apiFetch(`/claims/${id}`, {
-        method: 'PATCH',
-        getAccessToken: tokenFn,
-        body: {status},
-      })
-      await load()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Review failed')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const personName = (id: string) => people.find((p) => p._id === id)?.name ?? id
 
   return (
-    <main className="mx-auto max-w-[var(--measure-wide)] px-5 py-12 md:px-8 md:py-16">
-      <p className="rail-title">Your place in the archive</p>
-      <h1 className="story-title mt-3 text-[2.15rem] sm:text-4xl md:text-5xl">Profile</h1>
-      <p className="mt-5 text-xl leading-relaxed text-ink-soft">
-        Update how you are connected, and claim your historical person card if it is already in
-        the roster.
-      </p>
+    <main className="container container-narrow py-8 md:py-12">
+      <ProfileHeader
+        media={<Avatar name={displayName} src={user?.imageUrl} size="xl" ring />}
+        name={displayName}
+        eyebrow={roleLabel}
+        note={
+          me.howConnected || (
+            <>
+              You have not said how you were connected to the programme yet.{' '}
+              <Link href="/settings" className="underline decoration-rule hover:text-accent">
+                Add a line about yourself
+              </Link>
+              .
+            </>
+          )
+        }
+        actions={
+          <>
+            <ButtonLink href="/settings" variant="secondary" icon="edit">
+              Edit profile
+            </ButtonLink>
+            <ButtonLink href="/contribute" variant="primary" icon="compose">
+              Share a story
+            </ButtonLink>
+          </>
+        }
+      />
 
-      {error ? <p className="mt-6 text-base text-red-800">{error}</p> : null}
-
-      {!me ? (
-        <p className="mt-10 text-lg text-ink-soft">Loading…</p>
+      {approvedPerson ? (
+        <Link
+          href={`/people/${approvedPerson.slug}`}
+          className="card card--interactive mt-8 flex items-center gap-4 p-4"
+        >
+          <Avatar name={approvedPerson.name} src={approvedPerson.portraitUrl} size="md" />
+          <span className="min-w-0 flex-1">
+            <span className="block text-[1.0625rem] font-semibold text-ink">
+              Your page in the archive
+            </span>
+            <span className="meta-line truncate-1 block">
+              {[approvedPerson.name, rosterFacts(approvedPerson)].filter(Boolean).join(' — ')}
+            </span>
+          </span>
+          <span className="shrink-0 text-ink-faint">
+            <Icon name="forward" size={20} />
+          </span>
+        </Link>
+      ) : approvedUnknown ? (
+        <p className="meta-line mt-8">
+          Your claim to a card in the roster is approved, but that card is not loading right now.
+        </p>
+      ) : pendingClaim ? (
+        <p className="meta-line mt-8">
+          Waiting on an editor to confirm that {pendingPerson?.name ?? 'the card you chose'} is you.
+        </p>
       ) : (
-        <>
-          <form onSubmit={saveProfile} className="mt-10 space-y-5 border-t border-rule pt-10">
-            <div>
-              <label htmlFor="displayName" className="rail-title">
-                Display name
-              </label>
-              <input
-                id="displayName"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                className="mt-2 min-h-12 w-full rounded-md border border-rule bg-paper px-3 py-3 text-lg"
-                required
-              />
-            </div>
-            <div>
-              <label htmlFor="howConnected" className="rail-title">
-                How were you connected?
-              </label>
-              <input
-                id="howConnected"
-                value={howConnected}
-                onChange={(e) => setHowConnected(e.target.value)}
-                placeholder="e.g. Insectary 1984–89 · grew up on Cotonou compound · spouse of…"
-                className="mt-2 min-h-12 w-full rounded-md border border-rule bg-paper px-3 py-3 text-lg"
-              />
-            </div>
-            <p className="text-sm text-ink-faint">
-              Role: {me.role}
-              {me.email ? ` · ${me.email}` : ''}
-            </p>
-            <button type="submit" disabled={saving} className="btn-primary disabled:opacity-60">
-              {saving ? 'Saving…' : 'Save profile'}
-            </button>
-          </form>
-
-          <section className="mt-14 border-t border-rule pt-10">
-            <h2 className="story-title text-2xl">This is me</h2>
-            <p className="mt-3 text-lg text-ink-soft">
-              Search the historical roster and claim the card that is you. An editor may glance at
-              it — we keep that light.
-            </p>
-            <form onSubmit={submitClaim} className="mt-6 space-y-4">
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search by name…"
-                className="min-h-12 w-full rounded-md border border-rule bg-paper px-3 py-3 text-lg"
-              />
-              <select
-                value={selectedPersonId}
-                onChange={(e) => setSelectedPersonId(e.target.value)}
-                className="min-h-12 w-full rounded-md border border-rule bg-paper px-3 py-3 text-base"
-                required
-              >
-                <option value="">Choose a person…</option>
-                {filtered.map((p) => (
-                  <option key={p._id} value={p._id}>
-                    {p.name}
-                    {p.role ? ` — ${p.role}` : ''}
-                    {p.yearsActive ? ` (${p.yearsActive})` : ''}
-                  </option>
-                ))}
-              </select>
-              <textarea
-                value={claimNote}
-                onChange={(e) => setClaimNote(e.target.value)}
-                rows={3}
-                placeholder="Optional note — why this is you"
-                className="w-full rounded-md border border-rule bg-paper px-3 py-3 text-lg"
-              />
-              <button type="submit" disabled={saving} className="btn-primary disabled:opacity-60">
-                Submit claim
-              </button>
-            </form>
-
-            {claims.length ? (
-              <ul className="mt-8 space-y-3">
-                {claims.map((c) => (
-                  <li key={c.id} className="border border-rule bg-paper-2 px-4 py-3 text-base">
-                    <span className="font-medium">{personName(c.sanityPersonId)}</span>
-                    <span className="text-ink-soft"> · {c.status}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </section>
-
-          {pending.length ? (
-            <section className="mt-14 border-t border-rule pt-10">
-              <h2 className="story-title text-2xl">Pending claims</h2>
-              <ul className="mt-6 space-y-4">
-                {pending.map((c) => (
-                  <li
-                    key={c.id}
-                    className="flex flex-wrap items-center justify-between gap-3 border border-rule px-4 py-3"
-                  >
-                    <div>
-                      <p className="font-medium">{personName(c.sanityPersonId)}</p>
-                      {c.note ? <p className="text-sm text-ink-soft">{c.note}</p> : null}
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        className="btn-primary"
-                        disabled={saving}
-                        onClick={() => reviewClaim(c.id, 'approved')}
-                      >
-                        Approve
-                      </button>
-                      <button
-                        type="button"
-                        className="nav-link min-h-10 border border-rule px-3"
-                        disabled={saving}
-                        onClick={() => reviewClaim(c.id, 'rejected')}
-                      >
-                        Reject
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-
-          <p className="mt-12 text-base text-ink-soft">
-            Ready with a story?{' '}
-            <Link href="/contribute" className="underline decoration-rule hover:text-accent">
-              Share one with the archive
-            </Link>
-            .
+        <section className="card mt-8 p-5">
+          <h2 className="text-[1.1875rem] font-bold tracking-[-0.02em] text-ink">
+            Are you already in the archive?
+          </h2>
+          <p className="mt-2 max-w-[52ch] text-[1.0625rem] leading-relaxed text-ink-soft">
+            Many people from the programme already have a card here, written from annual reports.
+            Find yours and tell us it is you — an editor confirms it, and the card becomes your page.
           </p>
-        </>
+          <div className="mt-4">
+            <ButtonLink href="/settings" variant="secondary" icon="search">
+              Find your card
+            </ButtonLink>
+          </div>
+        </section>
       )}
+
+      <Tabs
+        items={TABS}
+        value={tab}
+        onValueChange={setTab}
+        label="Your profile"
+        className="mt-10"
+      />
+
+      <div className="mt-6">
+        <TabPanel id="stories" active={tab === 'stories'}>
+          <EmptyState
+            icon="stories"
+            title="No stories are linked to you yet"
+            action={
+              <div className="flex flex-wrap justify-center gap-3">
+                <ButtonLink href="/contribute" variant="primary" icon="compose">
+                  Share a story
+                </ButtonLink>
+                {approvedPerson ? (
+                  <ButtonLink href={`/people/${approvedPerson.slug}`} variant="secondary">
+                    View your archive page
+                  </ButtonLink>
+                ) : null}
+              </div>
+            }
+          >
+            {approvedPerson
+              ? 'Send a memory and an editor publishes it. Stories that already name you are listed on your archive page.'
+              : 'Send a memory and an editor publishes it to the archive under your name.'}
+          </EmptyState>
+        </TabPanel>
+
+        <TabPanel id="photos" active={tab === 'photos'}>
+          <EmptyState
+            icon="photos"
+            title="No photographs are linked to you yet"
+            action={
+              <ButtonLink href="/contribute" variant="primary" icon="camera">
+                Send photographs
+              </ButtonLink>
+            }
+          >
+            Photographs live in the archive galleries. Send yours — with names, if you remember them
+            — and an editor adds them to a gallery.
+          </EmptyState>
+        </TabPanel>
+
+        <TabPanel id="about" active={tab === 'about'}>
+          <dl className="border-t border-rule">
+            <AboutRow term="How you are connected">
+              {me.howConnected || (
+                <span className="text-ink-faint">Not written yet</span>
+              )}
+            </AboutRow>
+            <AboutRow term="Display name">{me.displayName}</AboutRow>
+            <AboutRow term="Email address">
+              {me.email || user?.primaryEmailAddress?.emailAddress || (
+                <span className="text-ink-faint">Not on file</span>
+              )}
+            </AboutRow>
+            <AboutRow term="Role in the archive">
+              {roleLabel ?? 'Community member'}
+            </AboutRow>
+            <AboutRow term="Card in the archive">
+              {approvedPerson ? (
+                <Link
+                  href={`/people/${approvedPerson.slug}`}
+                  className="underline decoration-rule hover:text-accent"
+                >
+                  {approvedPerson.name}
+                </Link>
+              ) : pendingClaim ? (
+                `${pendingPerson?.name ?? 'A card'} — waiting for an editor`
+              ) : (
+                <span className="text-ink-faint">Not claimed</span>
+              )}
+            </AboutRow>
+          </dl>
+          <div className="mt-6">
+            <ButtonLink href="/settings" variant="secondary" icon="edit">
+              Edit these details
+            </ButtonLink>
+          </div>
+        </TabPanel>
+      </div>
     </main>
+  )
+}
+
+function AboutRow({term, children}: {term: string; children: React.ReactNode}) {
+  return (
+    <div className="flex flex-col gap-1 border-b border-rule py-4 sm:flex-row sm:gap-6">
+      <dt className="shrink-0 text-[1rem] font-semibold text-ink sm:w-56">{term}</dt>
+      <dd className="min-w-0 text-[1.0625rem] leading-relaxed text-ink-soft [overflow-wrap:anywhere]">
+        {children}
+      </dd>
+    </div>
   )
 }

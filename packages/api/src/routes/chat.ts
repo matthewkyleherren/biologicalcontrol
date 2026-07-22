@@ -1,4 +1,4 @@
-import {and, desc, eq, ilike, inArray, isNull, ne} from 'drizzle-orm'
+import {and, count, desc, eq, gt, ilike, inArray, isNull, ne} from 'drizzle-orm'
 import {Hono} from 'hono'
 import {z} from 'zod'
 import type {Database} from '@biologicalcontrol/db'
@@ -7,6 +7,7 @@ import {
   conversations,
   messageAttachments,
   messages,
+  profiles,
   users,
 } from '@biologicalcontrol/db'
 import {createMessageBodySchema} from '@biologicalcontrol/shared'
@@ -48,6 +49,23 @@ async function enrichConversation(db: Database, convo: typeof conversations.$inf
     orderBy: [desc(messages.createdAt)],
   })
 
+  // Unread = messages from someone else since this member last opened the
+  // thread. `lastReadAt` was already being written on every message fetch; it
+  // just was never read back, so the inbox had no way to show unread state.
+  const viewerMembership = members.find((m) => m.userId === viewerId)
+  const unreadFilters = [
+    eq(messages.conversationId, convo.id),
+    isNull(messages.deletedAt),
+    ne(messages.senderId, viewerId),
+  ]
+  if (viewerMembership?.lastReadAt) {
+    unreadFilters.push(gt(messages.createdAt, viewerMembership.lastReadAt))
+  }
+  const [unread] = await db
+    .select({value: count()})
+    .from(messages)
+    .where(and(...unreadFilters))
+
   const title =
     convo.title ||
     (convo.type === 'dm'
@@ -59,11 +77,13 @@ async function enrichConversation(db: Database, convo: typeof conversations.$inf
     title,
     peers,
     memberCount: members.length,
+    unreadCount: unread?.value ?? 0,
     lastMessage: latest
       ? {
           id: latest.id,
           body: latest.body,
           senderId: latest.senderId,
+          senderName: byId[latest.senderId]?.displayName ?? null,
           createdAt: latest.createdAt,
         }
       : null,
@@ -100,29 +120,38 @@ export function chatRoutes(db: Database | null) {
 
     const user = await ensureAppUser(db, auth)
     const q = (c.req.query('q') ?? '').trim()
-    if (q.length < 1) {
-      const recent = await db.query.users.findMany({
-        where: ne(users.id, user.id),
-        orderBy: [desc(users.updatedAt)],
-        limit: 30,
-      })
-      return c.json({
-        users: recent.map((u) => ({
-          id: u.id,
-          displayName: u.displayName,
-          howConnected: null as string | null,
-        })),
-      })
-    }
 
-    const rows = await db.query.users.findMany({
-      where: and(ne(users.id, user.id), ilike(users.displayName, `%${q}%`)),
-      limit: 30,
-    })
+    const rows = q
+      ? await db.query.users.findMany({
+          where: and(ne(users.id, user.id), ilike(users.displayName, `%${q}%`)),
+          limit: 30,
+        })
+      : await db.query.users.findMany({
+          where: ne(users.id, user.id),
+          orderBy: [desc(users.updatedAt)],
+          limit: 30,
+        })
+
+    // "How connected" is the one line that tells you which Ade this is.
+    // Without it the search results are an undifferentiated list of names.
+    const connections =
+      rows.length > 0
+        ? await db.query.profiles.findMany({
+            where: inArray(
+              profiles.userId,
+              rows.map((u) => u.id)
+            ),
+          })
+        : []
+    const howConnectedById = Object.fromEntries(
+      connections.map((p) => [p.userId, p.howConnected])
+    )
+
     return c.json({
       users: rows.map((u) => ({
         id: u.id,
         displayName: u.displayName,
+        howConnected: howConnectedById[u.id] ?? null,
       })),
     })
   })
