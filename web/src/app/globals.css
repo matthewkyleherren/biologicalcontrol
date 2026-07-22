@@ -1,14 +1,16 @@
 @import 'tailwindcss';
 
-/* Hallmark · macrostructure: Ecosystem Index · genre: editorial · theme: Cursor brand
- * audience: programme alumni, family, historians · use: read & contribute folklore
- * identity: Geist Sans everywhere · warm beige paper · near-black ink · punchy headlines
- * nav: N6 Masthead · footer: Ft1 Mast-headed
+/* Hallmark · macrostructure: Ecosystem Index · genre: modern-minimal · theme: Cursor beige
+ * design-system: design.md · audience: staff + families · use: find each other / leave folklore
+ * identity: Geist Sans · warm #f7f7f4 paper · near-black ink · punchy headlines
+ * nav: N9 Edge-aligned · footer: Ft2 Inline
  * domain: biologicalcontrol.org
- * pre-emit critique: P5 H5 E4 S5 R4 V4
+ * pre-emit critique: P5 H5 E5 S5 R5 V4
+ * note: joke themes live in themes.css under [data-theme] — do not grade them as default
  */
 
-:root {
+:root,
+html[data-theme='default'] {
   /* Cursor warm paper */
   --color-paper: #f7f7f4;
   --color-paper-2: #efeee9;
@@ -19,7 +21,7 @@
   --color-rule: #d9d7ce;
   --color-accent: #3d5c45;
   --color-accent-soft: #e8efe9;
-  --color-focus: #3d5c45;
+  --color-focus: #26251e;
 
   /* Geist Sans everywhere — no serif */
   --font-display: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
@@ -224,12 +226,16 @@ button:focus-visible {
 .nav-link {
   font-size: 1.05rem;
   line-height: 1.2;
-  padding: 0.65rem 0.4rem;
+  padding: 0.65rem 0.55rem;
   color: var(--color-ink-soft);
-  transition: color var(--duration) var(--ease-out);
+  transition: color 160ms var(--ease-out);
 }
 
 .nav-link:hover {
+  color: var(--color-ink);
+}
+
+.nav-link:active {
   color: var(--color-ink);
 }
 
@@ -239,7 +245,7 @@ button:focus-visible {
   justify-content: center;
   min-height: 3rem;
   padding: 0.75rem 1.35rem;
-  border-radius: 0.25rem;
+  border-radius: 0.375rem;
   background: var(--color-ink);
   color: var(--color-paper);
   font-family: var(--font-ui);
@@ -247,12 +253,23 @@ button:focus-visible {
   font-weight: 600;
   letter-spacing: -0.01em;
   transition:
-    background var(--duration) var(--ease-out),
-    transform 160ms var(--ease-out);
+    background 160ms var(--ease-out),
+    transform 120ms var(--ease-out),
+    opacity 160ms var(--ease-out);
 }
 
 .btn-primary:hover {
-  background: var(--color-accent);
+  background: color-mix(in srgb, var(--color-ink) 88%, var(--color-accent));
+}
+
+.btn-primary:active {
+  transform: translateY(1px);
+}
+
+.btn-primary:disabled,
+.btn-primary[aria-disabled='true'] {
+  opacity: 0.45;
+  pointer-events: none;
 }
 
 .btn-secondary {
@@ -261,7 +278,7 @@ button:focus-visible {
   justify-content: center;
   min-height: 3rem;
   padding: 0.75rem 1.35rem;
-  border-radius: 0.25rem;
+  border-radius: 0.375rem;
   border: 1.5px solid var(--color-ink);
   background: transparent;
   color: var(--color-ink);
@@ -270,13 +287,82 @@ button:focus-visible {
   font-weight: 600;
   letter-spacing: -0.01em;
   transition:
-    background var(--duration) var(--ease-out),
-    color var(--duration) var(--ease-out);
+    background 160ms var(--ease-out),
+    color 160ms var(--ease-out),
+    transform 120ms var(--ease-out),
+    opacity 160ms var(--ease-out);
 }
 
 .btn-secondary:hover {
   background: var(--color-ink);
   color: var(--color-paper);
+}
+
+.btn-secondary:active {
+  transform: translateY(1px);
+}
+
+.btn-secondary:disabled,
+.btn-secondary[aria-disabled='true'] {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.site-wordmark {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 650;
+  letter-spacing: -0.04em;
+  color: var(--color-ink);
+  line-height: 1.2;
+}
+
+@media (min-width: 768px) {
+  .site-wordmark {
+    font-size: 1.15rem;
+  }
+}
+
+.hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink-faint);
+}
+
+.hero-meta strong {
+  font-weight: 500;
+  color: var(--color-ink-soft);
+  letter-spacing: 0.06em;
+}
+
+.section-band {
+  border-bottom: 1px solid var(--color-rule);
+}
+
+.gallery-tile {
+  display: block;
+  min-width: 0;
+  padding: 1.35rem 1.25rem;
+  border: 1px solid var(--color-rule);
+  border-radius: 0.375rem;
+  background: var(--color-paper);
+  transition:
+    border-color 160ms var(--ease-out),
+    background 160ms var(--ease-out);
+}
+
+.gallery-tile:hover {
+  border-color: var(--color-ink);
+  background: var(--color-paper-2);
+}
+
+.gallery-tile:active {
+  transform: translateY(1px);
 }
 
 /* IITA-era business-card placeholders for people */

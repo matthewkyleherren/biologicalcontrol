@@ -1,4 +1,7 @@
+'use client'
+
 import Link from 'next/link'
+import {Show, SignInButton, UserButton} from '@clerk/nextjs'
 import {ThemeSettings} from '@/components/ThemeSettings'
 
 const links = [
@@ -8,11 +11,7 @@ const links = [
   {href: '/galleries', label: 'Photos'},
 ]
 
-export function SiteHeader({
-  siteTitle = 'Biological Control Folklore',
-}: {
-  siteTitle?: string
-}) {
+export function SiteHeader() {
   return (
     <header className="border-b border-rule bg-paper">
       <div className="theme-only theme-only-retro94 retro94-toolbar" aria-hidden>
@@ -34,27 +33,36 @@ export function SiteHeader({
           defeated — click here!!! ★★★
         </span>
       </div>
-      <div className="mx-auto flex max-w-[var(--site-max)] items-center justify-between gap-4 px-5 py-3 md:gap-6 md:px-8 md:py-4">
-        <Link href="/" className="min-w-0 py-1">
-          <span className="rail-title">biologicalcontrol.org</span>
-          <span className="mt-1 block truncate font-[family-name:var(--font-display)] text-[1.15rem] font-semibold tracking-[-0.04em] text-ink md:text-xl">
-            {siteTitle}
-          </span>
+      <div className="mx-auto flex max-w-[var(--site-max)] items-center justify-between gap-4 px-5 py-3.5 md:px-8 md:py-4">
+        <Link href="/" className="site-wordmark min-w-0 truncate py-1">
+          biologicalcontrol.org
         </Link>
         <div className="flex shrink-0 items-center gap-1">
-          <nav className="hidden items-center gap-1 lg:flex" aria-label="Primary">
+          <nav className="hidden items-center gap-0.5 lg:flex" aria-label="Primary">
             {links.map((link) => (
               <Link key={link.href} href={link.href} className="nav-link">
                 {link.label}
               </Link>
             ))}
-            <Link href="/contribute" className="btn-primary ml-2">
+            <Link href="/contribute" className="btn-primary ml-3">
               Share a story
             </Link>
           </nav>
           <Link href="/contribute" className="btn-primary shrink-0 lg:hidden">
             Share a story
           </Link>
+          <Show when="signed-out">
+            <SignInButton mode="modal">
+              <button type="button" className="nav-link ml-1 min-h-10 px-3 text-base">
+                Sign in
+              </button>
+            </SignInButton>
+          </Show>
+          <Show when="signed-in">
+            <div className="ml-2 flex items-center">
+              <UserButton />
+            </div>
+          </Show>
           <ThemeSettings variant="gear" />
         </div>
       </div>
@@ -70,16 +78,15 @@ export function SiteHeader({
           aria-label="Mobile"
         >
           {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="nav-link whitespace-nowrap px-3"
-            >
+            <Link key={link.href} href={link.href} className="nav-link whitespace-nowrap px-3">
               {link.label}
             </Link>
           ))}
           <Link href="/join" className="nav-link whitespace-nowrap px-3">
             Join
+          </Link>
+          <Link href="/sign-in" className="nav-link whitespace-nowrap px-3">
+            Sign in
           </Link>
         </nav>
       </div>

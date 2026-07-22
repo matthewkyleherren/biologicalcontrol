@@ -1,0 +1,19 @@
+{
+  "name": "biologicalcontrol",
+  "private": true,
+  "workspaces": [
+    "web",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w web",
+    "build": "npm run build -w web",
+    "db:generate": "npm run generate -w @biologicalcontrol/db",
+    "db:migrate": "npm run migrate -w @biologicalcontrol/db",
+    "db:push": "npm run push -w @biologicalcontrol/db",
+    "db:studio": "npm run studio -w @biologicalcontrol/db"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -60,7 +60,7 @@ export function StoryCard({
             alt={(mainImage as {alt?: string})?.alt || title}
             width={900}
             height={560}
-            className="h-full w-full object-cover transition-transform duration-500 ease-[var(--ease-out)] group-hover:scale-[1.02]"
+            className="h-full w-full object-cover transition-opacity duration-500 ease-[var(--ease-out)] group-hover:opacity-90"
           />
         </Link>
       ) : (

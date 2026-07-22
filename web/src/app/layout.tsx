@@ -1,5 +1,6 @@
 import type {Metadata} from 'next'
 import {Geist, Geist_Mono} from 'next/font/google'
+import {ClerkProvider} from '@clerk/nextjs'
 import {SiteHeader} from '@/components/SiteHeader'
 import {SiteFooter} from '@/components/SiteFooter'
 import {ThemeProvider} from '@/components/ThemeProvider'
@@ -33,20 +34,22 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html
-      lang="en"
-      data-theme="default"
-      suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} h-full`}
-    >
-      <body className="flex min-h-full flex-col bg-paper text-ink antialiased">
-        <script dangerouslySetInnerHTML={{__html: THEME_INIT_SCRIPT}} />
-        <ThemeProvider>
-          <SiteHeader />
-          {children}
-          <SiteFooter />
-        </ThemeProvider>
-      </body>
-    </html>
+    <ClerkProvider>
+      <html
+        lang="en"
+        data-theme="default"
+        suppressHydrationWarning
+        className={`${geistSans.variable} ${geistMono.variable} h-full`}
+      >
+        <body className="flex min-h-full flex-col bg-paper text-ink antialiased">
+          <script dangerouslySetInnerHTML={{__html: THEME_INIT_SCRIPT}} />
+          <ThemeProvider>
+            <SiteHeader />
+            {children}
+            <SiteFooter />
+          </ThemeProvider>
+        </body>
+      </html>
+    </ClerkProvider>
   )
 }

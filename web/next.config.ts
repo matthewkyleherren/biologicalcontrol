@@ -1,6 +1,11 @@
 import type {NextConfig} from 'next'
 
 const nextConfig: NextConfig = {
+  transpilePackages: [
+    '@biologicalcontrol/api',
+    '@biologicalcontrol/db',
+    '@biologicalcontrol/shared',
+  ],
   images: {
     remotePatterns: [
       {

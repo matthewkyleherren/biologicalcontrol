@@ -2,7 +2,7 @@
 
 ## Executive summary
 
-biologicalcontrol.org is a **community folklore / social archive** for IITA Biological Control / PHMD alumni **and families** — not a science victory-lap site. Today that lives as a Next.js site (`web/`) plus Sanity Studio (`studio/`) for stories, people, galleries, and programme copy. The next backend must be **API-first** so the same capabilities power web, iOS, and Android.
+biologicalcontrol.org is a **community folklore / social archive** for everyone who was there — colleagues, partners, spouses, kids on station, friends — sharing the wonderful, funny, and unforgettable things that happened while they shared that world. It is **not** a science victory-lap site, and it does **not** split people into “staff” vs “family.” Today that lives as a Next.js site (`web/`) plus Sanity Studio (`studio/`) for stories, people, galleries, and programme copy. The next backend must be **API-first** so the same capabilities power web, iOS, and Android.
 
 **Split of concerns:** keep **Sanity as the editorial folklore CMS** (curated stories, people bios, galleries, programme). Build an **app backend** (Postgres + object storage + jobs + realtime) for users, claims, chat, bulk photos, processing jobs, and social graph. Publish-ready folklore still lands in Sanity (with optional app mirrors for feeds that need joins).
 
@@ -19,11 +19,11 @@ biologicalcontrol.org is a **community folklore / social archive** for IITA Biol
 | Jobs | **Inngest** | Enhance, face-tag, date inference, transcription — durable steps |
 | Voice → text | **Deepgram** (primary), Whisper API fallback | Multilingual EN/FR, good for elderly speech, async jobs |
 
-**Auth UX is product-critical:** password is optional; **SMS one-time code is the primary path**; email magic link second; passkeys/Face ID later. Invite-only signup + admin-assisted recovery for a small trusted community.
+**Auth UX is product-critical — and relaxed:** this is a community archive, **not a bank**. Offer **passwords and SMS OTP** as equal, easy paths (plus email magic link). Large type, big tap targets, sensible rate limits. Skip KYC theater, forced complex password rules, and invite-only fortress mode unless spam actually shows up.
 
 **High-value early feature:** **tap-to-record stories** → auto-transcribe (EN + FR) → **human review/edit/approve** → publish. Original audio stays an archival artifact.
 
-**Phased path:** MVP (auth + profiles + claims + contribute) → **voice stories** → chat → bulk photos → AI enhance/face-tag → polish. Face recognition needs explicit consent; elderly users and families make privacy non-negotiable.
+**Phased path:** MVP (auth + profiles + claims + contribute) → **voice stories** → chat → bulk photos → AI enhance/face-tag → polish. Face recognition still needs a simple opt-in consent — keep it human, not legalistic.
 
 ---
 
@@ -32,24 +32,26 @@ biologicalcontrol.org is a **community folklore / social archive** for IITA Biol
 ### Goals
 
 - API-first backend shared by Next.js web, iOS, and Android.
-- Account signup/signin that **elderly users can complete alone** (SMS OTP primary).
-- Link app users to historical **Sanity `person`** records (claim flow).
+- Account signup/signin that **elderly users can complete alone** (password **or** SMS OTP — both first-class).
+- One community of “people who were there” — **no staff vs family product split**.
+- Link app users to historical **Sanity `person`** records (claim / “this is me” flow).
 - Tag people in stories (Studio + app + web stay coherent).
 - Real DMs + optional compound/group threads, with push on mobile.
 - Bulk photo dumps with uploader attribution; immutable originals.
 - Async enhance + face detect/cluster/match; approximate date inference; “photos of me” feed.
 - **Voice storytelling:** record → transcribe → review → publish, with audio retained as archive.
-- Roles: member, family, editor, admin.
-- Privacy-first face/voice handling with consent and retention policies.
+- Roles: **community** (everyone) · **editor** · **admin** (moderation only).
+- Light-touch consent for face/voice — clear and kind, not bank-grade compliance theater.
 
 ### Non-goals (near term)
 
 - Replacing Sanity for curated programme/story/gallery editorial.
 - Building a full LinkedIn/Facebook clone (feeds, ads, public viral growth).
+- Differentiating “staff accounts” from “family accounts” in the product.
+- Banking-grade security, KYC, mandatory 2FA on every login, or invite-only fortress signup.
 - Real-time collaborative document editing inside Studio.
 - Self-hosting ML GPUs on day one (use APIs; open-source enhance as cost fallback later).
 - Perfect EXIF/date accuracy for every scanned print (heuristics + human confirm).
-- Public open signup without invite/moderation.
 
 ---
 
@@ -59,9 +61,9 @@ biologicalcontrol.org is a **community folklore / social archive** for IITA Biol
 
 **Pick Clerk** for web + Expo (iOS/Android):
 
-- Native **phone SMS OTP** sign-up/sign-in (Twilio / SMS provider configured in Clerk).
-- **Email magic link** / email OTP as the second passwordless path.
-- Passwords **optional** (never the only gate); no forced complex password rules for SMS users.
+- **Password** sign-up/sign-in (normal, allowed, no sadistic complexity rules).
+- **Phone SMS OTP** as an equal alternative (Twilio / SMS provider via Clerk).
+- **Email magic link** / email OTP as another easy path.
 - Expo SDK (`@clerk/expo`) + Next SDK; session JWTs for API calls.
 - Custom auth UI (do **not** ship default tiny Clerk components as-is) — large type, big tap targets.
 - Optional Apple / Google later as *extras* on mobile — never required.
@@ -70,35 +72,32 @@ biologicalcontrol.org is a **community folklore / social archive** for IITA Biol
 
 **Not recommended as primary:** Auth.js alone (SMS OTP is DIY via Twilio Verify; more glue for mobile sessions).
 
-#### Auth UX principles (elderly-first)
+#### Auth UX principles (elderly-first, community-grade)
+
+This is a folklore site for people who shared a compound — **not a bank**. Security should be “good enough + kind,” not adversarial.
 
 | Do | Don’t |
 | --- | --- |
-| Phone number → “Send code” → big digit boxes | Password-only signup |
-| Email magic link as backup | Tiny CAPTCHAs on every attempt |
+| Let people pick **password** *or* **SMS code** *or* email link | Treat password as second-class or forbidden |
+| Phone → “Send code” → big digit boxes | Tiny CAPTCHAs on every attempt |
 | 18–22px+ body, 48px+ tap targets, high contrast | Dense multi-step OAuth walls |
-| “A family member can help on this phone” copy | Force Google/Apple to continue |
-| Invite code or waitlist before first SMS | Open signup that burns SMS budget to bots |
+| “Someone can help you on this phone” copy | Force Google/Apple to continue |
+| Light rate limits on OTP / login | Invite-only fortress, KYC, or mandatory 2FA on every visit |
+| Open (or lightly moderated) signup for the community | Assume every visitor is a fraudster |
 
-#### SMS cost, fraud, SIM swap (light mitigations)
+#### Light mitigations (only what we actually need)
 
-For a **small trusted community**, keep risk low without banking-grade KYC:
+1. **Rate limits** on OTP send and login failures (per phone/IP) — enough to blunt bots.
+2. Turn up friction **if** abuse appears (CAPTCHA after N failures, temporary blocks) — not on day one for everyone.
+3. Editors can help someone who lost their phone/email get back in (human trust, known community) — keep a simple note of who helped whom; no audit-committee process.
+4. Budget SMS (~$0.05–0.15/msg); monitor monthly. Prefer password/email when SMS is flaky in a region.
+5. Skip SIM-swap theater and “step-up auth on claim” until there’s a real problem.
 
-1. **Invite-only** signup (editor issues invite codes / allowlisted phones/emails).
-2. **Rate limits:** OTP send per phone/IP; cooldown; max failed verifies.
-3. **Twilio fraud/geo filters** + block disposable routes if needed.
-4. **Admin-assisted account linking:** editors can verify identity offline (email/WhatsApp from known alumni) and bind phone ↔ user ↔ Sanity person — document this as exceptional, audited.
-5. SIM-swap residual risk: critical actions (claim person, export data, delete account) may require a second factor later (email confirm) — not on every login.
-6. Budget: expect ~$0.05–0.15/SMS depending on country; West Africa / Switzerland / US mix — monitor Clerk/Twilio dashboards monthly.
+#### Account recovery (keep it human)
 
-#### Account recovery (family-helper — privacy vs practicality)
-
-Document explicitly in product + privacy policy:
-
-- **Self-serve:** new SMS to same phone; magic link to linked email.
-- **Family helper on same device:** helper may operate the UI *with the member present*; no separate “login as” for family by default.
-- **Admin-assisted recovery:** member (or designated family contact on file) contacts editors; admin verifies via known programme context; rebinds phone/email. Log who approved, when, evidence type. **Do not** allow silent takeover via “spouse email only” without a recorded consent/verification step.
-- Optional later: designated **recovery contacts** (opt-in), who can *request* reset but not alone approve it.
+- **Self-serve:** password reset, new SMS to same phone, magic link to linked email.
+- **Helper on same device:** fine — a spouse or kid can help tap; no special “family role” required.
+- **Editor help:** if someone’s locked out, an editor who knows them can rebind phone/email. Keep it simple and kind.
 
 ### Primary app DB — **Neon Postgres**
 
@@ -161,25 +160,23 @@ IDs: `uuid` PKs unless noted. Timestamps: `created_at`, `updated_at`. Soft-delet
 | `phone_e164` | nullable unique |
 | `email` | nullable |
 | `display_name` | |
-| `role` | `member` \| `family` \| `editor` \| `admin` |
+| `role` | `community` \| `editor` \| `admin` (default `community`) |
 | `locale` | `en` \| `fr` preferred |
-| `invite_code_used` | |
-| `face_consent_at` | nullable — required before enrollment |
+| `face_consent_at` | nullable — before face matching |
 | `voice_consent_at` | nullable — before storing/publishing audio |
-| `recovery_notes` | admin-only text |
 
 ### `profiles`
 
-App-facing profile; may exist without a Sanity person (family members).
+App-facing profile for anyone in the community (may or may not map to a Sanity `person`).
 
 | Column | Notes |
 | --- | --- |
 | `user_id` | FK users |
 | `bio_short` | |
 | `avatar_r2_key` | |
-| `relationship` | `alumni` \| `spouse` \| `child` \| `friend` \| `other` |
+| `how_connected` | free text — e.g. “Insectary 1984–89”, “spouse of …”, “grew up in Cotonou compound” — **not** a staff/family enum |
 
-### `person_claims` — Sanity person ↔ app user
+### `person_claims` — Sanity person ↔ app user (“this is me”)
 
 | Column | Notes |
 | --- | --- |
@@ -187,13 +184,13 @@ App-facing profile; may exist without a Sanity person (family members).
 | `user_id` | FK |
 | `sanity_person_id` | Sanity `_id` |
 | `status` | `pending` \| `approved` \| `rejected` \| `revoked` |
-| `evidence` | JSON (email match, admin note) |
+| `note` | optional “why this is me” |
 | `reviewed_by` | user_id nullable |
 | `reviewed_at` | |
 
-**Rule:** at most one **approved** claim per `sanity_person_id`. Family users typically do **not** claim a person; they follow/relate instead (`person_follows` optional).
+**Rule:** at most one **approved** claim per `sanity_person_id`. Anyone in the community can claim (or help someone claim) a historical person card — we don’t gate that by staff vs family.
 
-Sanity `person.email` (already in schema, non-public) can auto-suggest claims; final approval is editor.
+Sanity `person.email` (non-public) can soft-suggest a match; editors can confirm if needed.
 
 ### `story_person_tags` (app mirror / community tags)
 
@@ -389,17 +386,18 @@ Worker: Inngest step → POST Topaz async → poll → PUT derivative to R2 → 
 
 | Role | Capabilities |
 | --- | --- |
-| `member` | Alumni-style: chat, upload, voice stories, tag, claim *one* person |
-| `family` | Same social features; claim discouraged; can be linked as relative of a person |
-| `editor` | Moderate, approve claims, promote tags, publish to Sanity, recovery assist |
-| `admin` | Roles, invites, retention, provider keys, destructive ops |
+| `community` | Default for everyone who signs up: chat, upload, voice stories, tag people, claim “this is me,” share folklore |
+| `editor` | Moderate, help with claims, promote tags, publish to Sanity, help locked-out users |
+| `admin` | Providers, retention knobs, destructive ops |
 
-### Claiming a historical person
+**No `staff` / `family` / `member` split.** The product is about the shared life of the compound — wonderful, funny, unforgettable stuff that happened while people were there together. How someone was connected is a profile line of text, not a permission class.
 
-1. User searches Sanity people (read API).
-2. Submits claim (+ optional note / email proof).
-3. Auto-approve only if Clerk email matches Sanity `person.email` (strict); else editor queue.
-4. On approve: `person_claims.status=approved`; enable “photos of me” + face enrollment prompt (consent).
+### Claiming a historical person (“this is me”)
+
+1. User searches people.
+2. Submits claim with an optional note.
+3. Soft auto-approve if emails match; otherwise a quick editor glance (or trust-on-first-use once the community is warm).
+4. On approve: enable “photos of me” + optional face opt-in.
 
 ---
 
@@ -407,11 +405,11 @@ Worker: Inngest step → POST Topaz async → poll → PUT derivative to R2 → 
 
 ### UX (web + iOS + Android)
 
-1. Huge **Hold / Tap to record** control; optional family-helper copy on screen.
+1. Huge **Hold / Tap to record** control; someone can help on the same phone.
 2. States: **Idle → Listening (recording) → Processing → Review → Submitted**.
 3. Review screen: editable transcript (large type), title, people tags, toggle **“Also publish my voice”**, language confirm.
 4. No publish without explicit **Approve & submit**.
-5. Same-device helper is fine; do not require dual accounts for MVP.
+5. Same-device helper is fine — no dual accounts.
 
 ### Transcription stack
 
@@ -471,20 +469,20 @@ Record on device
 ### Phase 0 — Foundation (1–2 weeks)
 
 - Monorepo layout (`packages/api`, Drizzle, Neon, R2, Inngest stub).
-- Clerk project: SMS OTP + email magic link; invite codes; custom large auth screens on web.
+- Clerk project: password + SMS OTP + email magic link; custom large auth screens on web.
 - Sync Clerk user → `users` row webhook.
 
 ### Phase 1 — MVP social identity
 
-- Profiles, roles, person claim queue, Sanity person search.
+- Profiles (`community` for all), person claim (“this is me”), Sanity person search.
 - Contribute story (text) via API → Sanity draft (replace ad-hoc `web` routes gradually).
 - Basic “tagged in folklore” from Sanity webhook mirror.
 
 ### Phase 2 — Voice stories (**soon after auth — high audience value**)
 
 - Record UI (web + mobile), R2 audio, Deepgram/Whisper job, review/edit/approve, editor publish to Sanity.
-- EN + FR language hint; retention/consent copy.
-- Family-helper UX affordances.
+- EN + FR language hint; simple consent copy.
+- Same-device helper affordances (big buttons, clear states).
 
 ### Phase 3 — Chat
 
@@ -497,12 +495,12 @@ Record on device
 ### Phase 5 — AI enhance + face + dates
 
 - Topaz (or fallback) enhance jobs.
-- Face detect/cluster/match **behind consent**.
+- Face detect/cluster/match **behind a simple opt-in**.
 - Date inference heuristics + confirm UI.
 
 ### Phase 6 — Polish
 
-- Passkeys/Face ID, recovery contacts, WhatsApp OTP experiment (Twilio) for regions where SMS is flaky, search, compound directories, Studio tools for promoting app tags, cost dashboards.
+- Passkeys/Face ID as convenience, WhatsApp OTP if SMS is flaky in some countries, search, compound directories, Studio tools for promoting app tags.
 
 ---
 
@@ -511,20 +509,20 @@ Record on device
 ### Rough monthly cost drivers (small community ~hundreds of users)
 
 - Neon + Clerk + R2: low tens of USD at start.
-- SMS OTP: dominant variable — mitigate with invites + rate limits.
+- SMS OTP: watch spend; rate-limit; passwords/email reduce SMS load.
 - Ably: free/low tier often enough early.
 - Deepgram/Whisper: per-minute audio — voice stories matter; cap duration (e.g. 15–20 min).
 - Topaz: per output megapixel — enhance on-demand or editor-triggered, not every upload blindly.
 - Face API: per image — batch off-peak; only community-visible photos.
 
-### Privacy principles (faces, elderly, families)
+### Privacy principles (kind, not bank-grade)
 
-1. **Consent before biometrics** (face enrollment); separate consent for voice storage/ASR/publish.
-2. Default face matching off until opt-in; unknown clusters are not public profiles.
-3. Clear language for older users: what the phone code is, who can hear voice, how to delete.
-4. Admin recovery is logged and exceptional.
-5. Prefer minimizing processors; publish subprocessors list.
-6. Children in historical photos: editorial judgment; no face enrollment for minors; tagging policy for editors.
+1. Ask before face matching or keeping/publishing voice — plain language.
+2. Default face matching off until someone opts in.
+3. Clear copy for older users: what the phone code is, who can hear a recording, how to delete.
+4. Editor help for locked-out friends is fine and human.
+5. Kids in old photos: editorial common sense; don’t enroll minors’ faces.
+6. Remember the point of the site: **shared life and laughter**, not surveillance.
 
 ---
 
@@ -576,13 +574,13 @@ Existing `web/src/app/api/contribute` and `profile` become thin clients of `pack
 ## Appendix A — Auth screen checklist
 
 - [ ] Phone field with country code preset (community defaults: NG, BJ, CI, CH, US, …)
-- [ ] Single primary CTA: “Text me a code”
+- [ ] Equal paths: **Create password** · **Text me a code** · **Email me a link**
 - [ ] OTP input: large, auto-advance, paste-friendly
 - [ ] “Resend code” with visible cooldown
-- [ ] “Use email instead” secondary
-- [ ] No CAPTCHA unless abuse appears; then invisible/friction only after N attempts
-- [ ] Password: hidden behind “More options”, never required for SMS users
-- [ ] Apple/Google: “More options” on mobile only
+- [ ] No CAPTCHA unless abuse appears; then only after repeated failures
+- [ ] Password: normal strength guidance, not sadistic rules
+- [ ] Apple/Google: optional “More options” on mobile only
+- [ ] Copy tone: welcoming community archive, not a vault
 
 ## Appendix B — Voice review checklist
 
@@ -594,5 +592,19 @@ Existing `web/src/app/api/contribute` and `profile` become thin clients of `pack
 - [ ] Max duration enforced client + server
 
 ---
+
+## 13. Implementation status (2026-07)
+
+Scaffolded in-repo (Clerk keys pending):
+
+| Piece | Status |
+| --- | --- |
+| `packages/shared` Zod contracts | done |
+| `packages/db` Drizzle schema + Neon client | done — `npm run db:push` when `DATABASE_URL` set |
+| `packages/api` Hono under `/api/v1` | done — health, me, claims, voice drafts, photos, chat, uploads, webhooks |
+| Next mount `web/src/app/api/v1/[[...route]]` | done |
+| Auth | `AUTH_DEV_BYPASS=true` until Clerk; JWT decode stub when `CLERK_SECRET_KEY` present |
+| R2 / Inngest / Ably / Deepgram | stubs — enqueue rows + signed URL placeholders |
+| Sign-in / sign-up pages | placeholders at `/sign-in`, `/sign-up` |
 
 *Living doc — align implementation PRs to phases above; do not expand scope past the current phase without updating this file.*
