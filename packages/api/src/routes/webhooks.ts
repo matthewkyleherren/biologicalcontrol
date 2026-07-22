@@ -1,8 +1,9 @@
 import {eq} from 'drizzle-orm'
 import {Hono} from 'hono'
+import {Webhooks} from 'svix'
 import {z} from 'zod'
 import type {Database} from '@biologicalcontrol/db'
-import {storyPersonTags, users} from '@biologicalcontrol/db'
+import {profiles, storyPersonTags, users} from '@biologicalcontrol/db'
 import type {AppEnv} from '../middleware/auth'
 
 const clerkUserWebhook = z.object({
@@ -33,11 +34,28 @@ const sanityStoryWebhook = z.object({
 export function webhooksRoutes(db: Database | null) {
   const app = new Hono<AppEnv>()
 
-  /** Clerk user.created / user.updated — wire Svix verification when keys arrive. */
   app.post('/webhooks/clerk', async (c) => {
     if (!db) return c.json({error: 'Database not configured'}, 503)
 
-    const payload = clerkUserWebhook.parse(await c.req.json())
+    const env = c.get('env')
+    const rawBody = await c.req.text()
+
+    if (env.CLERK_WEBHOOK_SECRET) {
+      const wh = new Webhooks(env.CLERK_WEBHOOK_SECRET)
+      try {
+        wh.verify(rawBody, {
+          'svix-id': c.req.header('svix-id') ?? '',
+          'svix-timestamp': c.req.header('svix-timestamp') ?? '',
+          'svix-signature': c.req.header('svix-signature') ?? '',
+        })
+      } catch {
+        return c.json({error: 'Invalid webhook signature'}, 400)
+      }
+    } else {
+      console.warn('[webhooks/clerk] CLERK_WEBHOOK_SECRET unset — accepting unsigned payload')
+    }
+
+    const payload = clerkUserWebhook.parse(JSON.parse(rawBody))
     if (!payload.type.startsWith('user.')) {
       return c.json({ok: true, ignored: true})
     }
@@ -63,19 +81,22 @@ export function webhooksRoutes(db: Database | null) {
         })
         .where(eq(users.id, existing.id))
     } else {
-      await db.insert(users).values({
-        clerkUserId: payload.data.id,
-        email,
-        phoneE164: phone,
-        displayName,
-        role: 'community',
-      })
+      const [created] = await db
+        .insert(users)
+        .values({
+          clerkUserId: payload.data.id,
+          email,
+          phoneE164: phone,
+          displayName,
+          role: 'community',
+        })
+        .returning()
+      await db.insert(profiles).values({userId: created!.id})
     }
 
     return c.json({ok: true})
   })
 
-  /** Sanity story create/update — mirror people tags into Postgres. */
   app.post('/webhooks/sanity', async (c) => {
     if (!db) return c.json({error: 'Database not configured'}, 503)
 

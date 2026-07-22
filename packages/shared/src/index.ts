@@ -92,6 +92,15 @@ export const createMessageBodySchema = z.object({
 })
 export type CreateMessageBody = z.infer<typeof createMessageBodySchema>
 
+export const createStoryDraftBodySchema = z.object({
+  title: z.string().min(1).max(200),
+  body: z.string().min(1).max(100_000),
+  year: z.number().int().min(1975).max(2030).optional(),
+  location: z.string().max(200).optional(),
+  sanityPersonIds: z.array(z.string()).max(40).default([]),
+})
+export type CreateStoryDraftBody = z.infer<typeof createStoryDraftBodySchema>
+
 export const healthResponseSchema = z.object({
   ok: z.literal(true),
   service: z.literal('biologicalcontrol-api'),

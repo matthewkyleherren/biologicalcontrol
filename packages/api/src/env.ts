@@ -19,6 +19,8 @@ export type ApiEnv = {
   R2_PUBLIC_BASE_URL?: string
   GCS_BUCKET?: string
   GCP_PROJECT_ID?: string
+  GCS_SERVICE_ACCOUNT_JSON?: string
+  CLERK_WEBHOOK_SECRET?: string
   INNGEST_EVENT_KEY?: string
   INNGEST_SIGNING_KEY?: string
   SANITY_API_WRITE_TOKEN?: string

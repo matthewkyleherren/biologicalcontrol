@@ -59,7 +59,10 @@ export function SiteHeader() {
             </SignInButton>
           </Show>
           <Show when="signed-in">
-            <div className="ml-2 flex items-center">
+            <div className="ml-2 flex items-center gap-1">
+              <Link href="/me" className="nav-link hidden sm:inline-flex">
+                Profile
+              </Link>
               <UserButton />
             </div>
           </Show>

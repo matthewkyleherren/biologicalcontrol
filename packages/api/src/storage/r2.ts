@@ -1,9 +1,9 @@
 import {Storage} from '@google-cloud/storage'
 import type {ApiEnv} from '../env'
 
-/** Prefer GCS (GCP CLI logged in). R2 kept as optional fallback. */
+/** Prefer GCS (GCP). R2 kept as optional fallback. */
 export function gcsConfigured(env: ApiEnv) {
-  return Boolean(env.GCS_BUCKET && env.GCP_PROJECT_ID)
+  return Boolean(env.GCS_BUCKET && (env.GCP_PROJECT_ID || env.GCS_SERVICE_ACCOUNT_JSON))
 }
 
 export function r2Configured(env: ApiEnv) {
@@ -21,6 +21,20 @@ export function buildObjectKey(kind: 'photo' | 'voice' | 'chat', id: string, ext
 }
 
 function getStorage(env: ApiEnv) {
+  if (env.GCS_SERVICE_ACCOUNT_JSON) {
+    const credentials = JSON.parse(env.GCS_SERVICE_ACCOUNT_JSON) as {
+      client_email: string
+      private_key: string
+      project_id?: string
+    }
+    return new Storage({
+      projectId: env.GCP_PROJECT_ID || credentials.project_id,
+      credentials: {
+        client_email: credentials.client_email,
+        private_key: credentials.private_key,
+      },
+    })
+  }
   return new Storage({
     projectId: env.GCP_PROJECT_ID,
   })

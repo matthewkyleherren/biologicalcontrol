@@ -595,16 +595,14 @@ Existing `web/src/app/api/contribute` and `profile` become thin clients of `pack
 
 ## 13. Implementation status (2026-07)
 
-Scaffolded in-repo (Clerk keys pending):
-
 | Piece | Status |
 | --- | --- |
 | `packages/shared` Zod contracts | done |
-| `packages/db` Drizzle schema + Neon client | done — `npm run db:push` when `DATABASE_URL` set |
-| `packages/api` Hono under `/api/v1` | done — health, me, claims, voice drafts, photos, chat, uploads, webhooks |
-| Next mount `web/src/app/api/v1/[[...route]]` | done |
-| Auth | `AUTH_DEV_BYPASS=true` until Clerk; JWT decode stub when `CLERK_SECRET_KEY` present |
-| R2 / Inngest / Ably / Deepgram | stubs — enqueue rows + signed URL placeholders |
-| Sign-in / sign-up pages | placeholders at `/sign-in`, `/sign-up` |
+| `packages/db` Drizzle schema + Neon | done + pushed |
+| `packages/api` Hono `/api/v1` | done — health, me, claims, stories drafts, voice, photos, chat, uploads, webhooks |
+| Next mount + Clerk UI | done — `/sign-in`, `/sign-up`, `/me`, contribute via API |
+| Auth | Clerk live (`AUTH_DEV_BYPASS=false`); Svix verify when `CLERK_WEBHOOK_SECRET` set |
+| Storage | GCS `biologicalcontrol-media` (R2 skipped) |
+| Vercel env | Neon/Clerk/GCS/Inngest/Ably/Resend on production/preview/development |
 
 *Living doc — align implementation PRs to phases above; do not expand scope past the current phase without updating this file.*

@@ -25,10 +25,15 @@ export default function SignInPage() {
             elements: {
               rootBox: 'w-full',
               card: 'shadow-none border border-[var(--border)] bg-[var(--bg)]',
+              headerTitle: 'text-2xl',
+              headerSubtitle: 'text-lg text-[var(--muted)]',
               formButtonPrimary:
-                'min-h-12 bg-[var(--fg)] text-[var(--bg)] text-base hover:opacity-90',
-              formFieldInput: 'min-h-12 text-base',
+                'min-h-12 bg-[var(--fg)] text-[var(--bg)] text-lg hover:opacity-90',
+              formFieldInput: 'min-h-12 text-lg',
+              formFieldLabel: 'text-base',
               footerActionLink: 'text-base',
+              identityPreviewText: 'text-base',
+              otpCodeFieldInput: 'min-h-12 min-w-10 text-xl',
             },
           }}
         />

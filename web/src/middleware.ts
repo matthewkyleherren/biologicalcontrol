@@ -1,9 +1,6 @@
 import {clerkMiddleware, createRouteMatcher} from '@clerk/nextjs/server'
 
-/** Browser pages that need a Clerk session. API auth is Bearer JWT in Hono. */
-const isProtectedPage = createRouteMatcher([
-  // Add private app pages here as they land (e.g. /me, /chat)
-])
+const isProtectedPage = createRouteMatcher(['/me(.*)'])
 
 export default clerkMiddleware(async (auth, request) => {
   if (request.nextUrl.pathname.startsWith('/api/')) {

@@ -27,6 +27,22 @@ export function claimsRoutes(db: Database | null) {
     return c.json({claims: rows})
   })
 
+  app.get('/claims/pending', async (c) => {
+    const auth = requireAuth(c)
+    if (!auth) return c.json({error: 'Sign in required'}, 401)
+    if (!db) return c.json({error: 'Database not configured'}, 503)
+
+    const user = await ensureAppUser(db, auth)
+    if (user.role !== 'editor' && user.role !== 'admin') {
+      return c.json({error: 'Editor role required'}, 403)
+    }
+
+    const rows = await db.query.personClaims.findMany({
+      where: eq(personClaims.status, 'pending'),
+    })
+    return c.json({claims: rows})
+  })
+
   app.post('/claims', async (c) => {
     const auth = requireAuth(c)
     if (!auth) return c.json({error: 'Sign in required'}, 401)
