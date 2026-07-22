@@ -1,0 +1,4 @@
+{
+  "installCommand": "cd .. && npm install --include=optional",
+  "buildCommand": "cd .. && npm run build -w web"
+}
