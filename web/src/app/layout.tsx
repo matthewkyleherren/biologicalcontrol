@@ -1,6 +1,7 @@
 import type {Metadata, Viewport} from 'next'
 import {Geist, Geist_Mono} from 'next/font/google'
 import {ClerkProvider} from '@clerk/nextjs'
+import {Analytics} from '@vercel/analytics/next'
 import {SiteHeader} from '@/components/shell/SiteHeader'
 import {SiteFooter} from '@/components/shell/SiteFooter'
 import {BottomTabs} from '@/components/shell/BottomTabs'
@@ -69,6 +70,7 @@ export default function RootLayout({
               <BottomTabs />
             </UnreadProvider>
           </ThemeProvider>
+          <Analytics />
         </body>
       </html>
     </ClerkProvider>
