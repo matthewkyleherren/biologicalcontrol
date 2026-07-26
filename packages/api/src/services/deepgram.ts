@@ -1,3 +1,5 @@
+import {voiceKeyterms} from './voice-keyterms'
+
 export type DeepgramTranscription = {
   transcript: string
   detectedLanguage?: string
@@ -43,6 +45,10 @@ export async function transcribeAudioFromUrl(
   params.set('paragraphs', 'true')
   for (const [key, value] of Object.entries(languageParams(languageHint))) {
     params.set(key, value)
+  }
+  // Boost programme vocabulary (Nova keyterm param; repeat per term).
+  for (const term of voiceKeyterms()) {
+    params.append('keyterm', term)
   }
   const url = `https://api.deepgram.com/v1/listen?${params.toString()}`
 

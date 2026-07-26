@@ -1,4 +1,5 @@
 import type {ApiEnv} from '../env';
+import {VOICE_ACRONYM_HINTS, voiceKeyterms} from './voice-keyterms';
 
 /**
  * Deepgram currently supports browser-safe temporary JWTs via
@@ -63,7 +64,9 @@ export function buildAgentPrompt(languageHint: VoiceAgentLanguageHint) {
     'Do not re-ask a question they already answered. Do not call save_* twice for the same stage.',
     'Accept incomplete answers. If the teller says they do not remember, move on kindly.',
     'If the teller starts the story early, follow them and gather missing metadata later.',
-    'Common words in this archive: biocontrol, biological control, IITA, Cotonou, Ibadan, Benin, Nigeria, cassava, mealybug, green mite, PHMD. Prefer those spellings when heard.',
+    'Prefer correct archive spellings for programme words, Latin insect names, and staff surnames when heard.',
+    `Acronyms / centres (spoken forms): ${VOICE_ACRONYM_HINTS}.`,
+    'Latin names often heard: Phenacoccus manihoti, Anagyrus lopezi (also Epidinocarsis lopezi / Apoanagyrus lopezi), Mononychellus tanajoa, Manihot esculenta.',
     'Never claim the story is already published. Review and editor approval happen after this conversation.',
     languageInstruction(languageHint),
     '',
@@ -250,24 +253,7 @@ export function buildAgentConfig(input: DeepgramAgentConfigInput) {
     // Do NOT set eager_eot_threshold — eager turns make the agent jump ahead mid-answer.
     eot_threshold: 0.85,
     eot_timeout_ms: 9000,
-    keyterms: [
-      'biocontrol',
-      'biological control',
-      'Biological Control Programme',
-      'IITA',
-      'Cotonou',
-      'Ibadan',
-      'Benin',
-      'Nigeria',
-      'cassava',
-      'mealybug',
-      'green mite',
-      'PHMD',
-      'Apoanagyrus',
-      'Epidinocarsis',
-      'Neuenschwander',
-      'Herren',
-    ],
+    keyterms: voiceKeyterms(),
   };
   if (useMulti) {
     listenProvider.language_hints = languageHints;
