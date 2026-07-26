@@ -27,6 +27,7 @@ export type IconName =
   | 'signout'
   | 'edit'
   | 'camera'
+  | 'mic'
   | 'check'
   | 'alert'
   | 'menu'
@@ -124,6 +125,14 @@ const PATHS: Record<IconName, React.ReactNode> = {
     <>
       <path d="M3.5 8.5h3l1.5-2.5h8l1.5 2.5h3v10a1.5 1.5 0 0 1-1.5 1.5H5a1.5 1.5 0 0 1-1.5-1.5Z" />
       <circle cx="12" cy="13.5" r="3.5" />
+    </>
+  ),
+  mic: (
+    <>
+      <path d="M12 4.5a3 3 0 0 0-3 3v4a3 3 0 0 0 6 0v-4a3 3 0 0 0-3-3Z" />
+      <path d="M5.5 11.5a6.5 6.5 0 0 0 13 0" />
+      <path d="M12 18v3" />
+      <path d="M8.5 21h7" />
     </>
   ),
   check: <path d="m5 12.5 4.5 4.5L19 7" />,
