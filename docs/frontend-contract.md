@@ -23,6 +23,7 @@ Always gate the first fetch on Clerk's `isLoaded`.
 | --- | --- | --- |
 | GET | `/me` | `{id, clerkUserId, displayName, email, phoneE164, role, locale, howConnected, faceConsentAt, voiceConsentAt, approvedClaimPersonId}` |
 | PATCH | `/me` | `{ok:true}` — body `{displayName?, bioShort?, howConnected?, locale?}` |
+| PATCH | `/me/consent` | `{ok:true, voiceConsentAt}` — body `{voiceConsent: boolean}`; grant or revoke one-time voice consent (revoke affects future recordings only) |
 | GET | `/claims` | `{claims: [{id, sanityPersonId, status, note}]}` — the caller's own |
 | GET | `/claims/pending` | same shape; **403 unless role is editor/admin** |
 | POST | `/claims` | `{claim}` — body `{sanityPersonId, note?}`; 409 if already claimed by someone |

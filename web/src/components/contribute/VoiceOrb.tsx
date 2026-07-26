@@ -1,7 +1,9 @@
 'use client'
 
 import {useEffect, useRef, useState} from 'react'
+import {useRouter} from 'next/navigation'
 import {apiFetch} from '@/lib/api'
+import {isVoiceConsentRequiredError, voiceConsentHref} from '@/lib/consent'
 import {Alert, Button} from '@/components/ui'
 
 type VoiceAgentSession = {
@@ -306,6 +308,7 @@ export function VoiceOrb({
   onDraftId: (draftId: string) => void
   onRecordInstead: () => void
 }) {
+  const router = useRouter()
   const [session, setSession] = useState<VoiceAgentSession | null>(null)
   const [state, setState] = useState<'idle' | 'connecting' | 'active' | 'working' | 'error'>('idle')
   const [error, setError] = useState('')
@@ -785,7 +788,7 @@ export function VoiceOrb({
 
     if (!consent) {
       setState('error')
-      setError('Check the consent box first, then tap to talk.')
+      setError('Agree to voice recording on your profile first, then come back to tell a story.')
       return
     }
 
@@ -857,6 +860,10 @@ export function VoiceOrb({
       await postEvent(data.session.id, {type: 'heartbeat', payload: {consent: true}})
     } catch (err) {
       cleanupConnection()
+      if (isVoiceConsentRequiredError(err)) {
+        router.replace(voiceConsentHref('/contribute'))
+        return
+      }
       const message = errorMessage(
         err,
         'The live interviewer could not start. Record the story instead, or write it.'

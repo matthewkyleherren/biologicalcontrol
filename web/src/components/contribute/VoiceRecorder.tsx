@@ -1,7 +1,9 @@
 'use client'
 
 import {useEffect, useRef, useState} from 'react'
+import {useRouter} from 'next/navigation'
 import {apiFetch} from '@/lib/api'
+import {isVoiceConsentRequiredError, voiceConsentHref} from '@/lib/consent'
 import {Alert, Button, Icon} from '@/components/ui'
 import type {VoiceDraft} from './VoiceReview'
 
@@ -78,6 +80,7 @@ export function VoiceRecorder({
   getAccessToken: () => Promise<string | null>
   onDraftCreated: (draft: VoiceDraft) => void
 }) {
+  const router = useRouter()
   const [state, setState] = useState<RecorderState>('idle')
   const [elapsedMs, setElapsedMs] = useState(0)
   const [error, setError] = useState('')
@@ -117,7 +120,7 @@ export function VoiceRecorder({
     setAutoStopped(false)
 
     if (!consent) {
-      setError('Check the consent box first, then tap to record.')
+      setError('Agree to voice recording on your profile first, then come back to tell a story.')
       return
     }
 
@@ -264,6 +267,10 @@ export function VoiceRecorder({
         await createDirectDraft()
       }
     } catch (err) {
+      if (isVoiceConsentRequiredError(err)) {
+        router.replace(voiceConsentHref('/contribute'))
+        return
+      }
       setState('idle')
       setError(
         errorMessage(

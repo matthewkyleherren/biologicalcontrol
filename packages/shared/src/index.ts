@@ -68,6 +68,12 @@ export const updateProfileBodySchema = z.object({
 })
 export type UpdateProfileBody = z.infer<typeof updateProfileBodySchema>
 
+/** One-time voice recording consent (grant or revoke for future recordings). */
+export const updateVoiceConsentBodySchema = z.object({
+  voiceConsent: z.boolean(),
+})
+export type UpdateVoiceConsentBody = z.infer<typeof updateVoiceConsentBodySchema>
+
 export const createVoiceDraftBodySchema = z.object({
   audioR2Key: z.string().min(1),
   audioDurationMs: z.number().int().positive().max(20 * 60 * 1000),

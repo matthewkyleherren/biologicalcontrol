@@ -52,12 +52,16 @@ export function voiceRoutes(db: Database | null) {
 
     const body = createVoiceDraftBodySchema.parse(await c.req.json())
     const user = await ensureAppUser(db, auth)
+    if (!user.voiceConsentAt) {
+      return c.json(
+        {
+          error: 'Voice consent required',
+          code: 'VOICE_CONSENT_REQUIRED',
+        },
+        403
+      )
+    }
     const env = c.get('env')
-
-    await db
-      .update(users)
-      .set({voiceConsentAt: new Date(), updatedAt: new Date()})
-      .where(eq(users.id, user.id))
 
     const [draft] = await db
       .insert(voiceStoryDrafts)
@@ -66,7 +70,7 @@ export function voiceRoutes(db: Database | null) {
         audioR2Key: body.audioR2Key,
         audioDurationMs: body.audioDurationMs,
         languageHint: body.languageHint,
-        consentRecordedAt: new Date(),
+        consentRecordedAt: user.voiceConsentAt,
         transcriptStatus: 'pending',
         status: 'processing',
       })
@@ -138,12 +142,16 @@ export function voiceRoutes(db: Database | null) {
     }
 
     const user = await ensureAppUser(db, auth)
+    if (!user.voiceConsentAt) {
+      return c.json(
+        {
+          error: 'Voice consent required',
+          code: 'VOICE_CONSENT_REQUIRED',
+        },
+        403
+      )
+    }
     const now = new Date()
-
-    await db
-      .update(users)
-      .set({voiceConsentAt: now, updatedAt: now})
-      .where(eq(users.id, user.id))
 
     const [draft] = await db
       .insert(voiceStoryDrafts)
@@ -152,7 +160,7 @@ export function voiceRoutes(db: Database | null) {
         audioR2Key: `unstored/${randomUUID()}.${extensionFromContentType(body.contentType)}`,
         audioDurationMs: body.audioDurationMs,
         languageHint: body.languageHint,
-        consentRecordedAt: now,
+        consentRecordedAt: user.voiceConsentAt,
         transcriptRaw,
         transcriptEdited: transcriptRaw,
         transcriptStatus: 'ready',
