@@ -805,7 +805,9 @@ export function VoiceOrb({
       const data = await apiFetch<CreateSessionResponse>('/voice-agent/sessions', {
         method: 'POST',
         getAccessToken,
-        body: {languageHint: 'auto'},
+        // English Flux is more accurate; French speakers can still be understood,
+        // and we can widen to `auto`/`fr` later from profile locale.
+        body: {languageHint: 'en'},
       })
       setSessionState(data.session)
 
