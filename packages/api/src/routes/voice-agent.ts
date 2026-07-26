@@ -231,6 +231,60 @@ export function voiceAgentRoutes(db: Database | null) {
       return c.json({error: 'Session has been abandoned'}, 409);
     }
 
+    const consentRecordedAt = session.consentRecordedAt ?? user.voiceConsentAt;
+    if (!consentRecordedAt) {
+      return c.json({error: 'Voice consent is required before processing'}, 400);
+    }
+
+    const now = new Date();
+    const meta = session.metaJson ?? {};
+
+    if (body.draftId) {
+      const existingDraft = await db.query.voiceStoryDrafts.findFirst({
+        where: eq(voiceStoryDrafts.id, body.draftId),
+      });
+      if (!existingDraft || existingDraft.userId !== user.id) {
+        return c.json({error: 'Linked draft not found'}, 404);
+      }
+
+      const [updatedDraft] = await db
+        .update(voiceStoryDrafts)
+        .set({
+          languageHint: session.languageHint,
+          title: meta.title ?? existingDraft.title,
+          location: meta.location ?? existingDraft.location,
+          yearText: meta.yearText ?? existingDraft.yearText,
+          year: meta.year ?? existingDraft.year,
+          sanityPersonIds: meta.peopleSanityIds ?? existingDraft.sanityPersonIds ?? [],
+          peopleNames: meta.peopleNames ?? existingDraft.peopleNames ?? [],
+          consentRecordedAt,
+          publishAudio: false,
+          updatedAt: now,
+        })
+        .where(eq(voiceStoryDrafts.id, existingDraft.id))
+        .returning();
+
+      const [updatedSession] = await db
+        .update(voiceAgentSessions)
+        .set({
+          draftId: updatedDraft!.id,
+          status: 'review',
+          stage: 'done',
+          storyAudioR2Key: updatedDraft!.audioR2Key,
+          interviewAudioR2Key: body.interviewAudioR2Key ?? session.interviewAudioR2Key,
+          providerSessionRef: body.providerRecordingId ?? session.providerSessionRef,
+          completedAt: now,
+          updatedAt: now,
+        })
+        .where(eq(voiceAgentSessions.id, session.id))
+        .returning();
+
+      return c.json({
+        session: serializeSession(updatedSession!),
+        draftId: updatedDraft!.id,
+      });
+    }
+
     const audioR2Key = body.audioR2Key ?? session.storyAudioR2Key;
     if (!audioR2Key || !body.audioDurationMs) {
       return c.json(
@@ -239,13 +293,6 @@ export function voiceAgentRoutes(db: Database | null) {
       );
     }
 
-    const consentRecordedAt = session.consentRecordedAt ?? user.voiceConsentAt;
-    if (!consentRecordedAt) {
-      return c.json({error: 'Voice consent is required before processing'}, 400);
-    }
-
-    const now = new Date();
-    const meta = session.metaJson ?? {};
     let draftId = session.draftId;
 
     if (draftId) {

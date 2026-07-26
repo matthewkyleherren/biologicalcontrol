@@ -16,6 +16,7 @@ type SignedUploadResponse = {
 
 const MAX_DURATION_MS = 20 * 60 * 1000
 const WARNING_DURATION_MS = 15 * 60 * 1000
+const MAX_DIRECT_FALLBACK_BYTES = 8 * 1024 * 1024
 
 function pickMimeType() {
   if (typeof MediaRecorder === 'undefined') return ''
@@ -48,6 +49,24 @@ function stopStream(stream: MediaStream | null) {
 function errorMessage(err: unknown, fallback: string) {
   if (err instanceof Error && err.message) return err.message
   return fallback
+}
+
+function isStubUploadUrl(uploadUrl: string) {
+  try {
+    return new URL(uploadUrl).hostname === 'upload.stub.local'
+  } catch {
+    return uploadUrl.includes('upload.stub.local')
+  }
+}
+
+async function blobToBase64(blob: Blob) {
+  const bytes = new Uint8Array(await blob.arrayBuffer())
+  let binary = ''
+  const chunkSize = 0x8000
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize))
+  }
+  return window.btoa(binary)
 }
 
 export function VoiceRecorder({
@@ -169,6 +188,27 @@ export function VoiceRecorder({
     setError('')
     try {
       const contentType = contentTypeForUpload(blob)
+      const createDirectDraft = async () => {
+        if (blob.size > MAX_DIRECT_FALLBACK_BYTES) {
+          throw new Error(
+            'This recording is too long to save without storage configured. Please make a shorter recording for now, or write it down.'
+          )
+        }
+        setState('processing')
+        const data = await apiFetch<{draft: VoiceDraft}>('/voice-drafts/direct', {
+          method: 'POST',
+          getAccessToken,
+          body: {
+            audioBase64: await blobToBase64(blob),
+            contentType,
+            audioDurationMs: Math.min(durationMs, MAX_DURATION_MS),
+            languageHint: 'auto',
+            voiceConsent: true,
+          },
+        })
+        onDraftCreated(data.draft)
+      }
+
       const signed = await apiFetch<SignedUploadResponse>('/uploads/signed-url', {
         method: 'POST',
         getAccessToken,
@@ -179,11 +219,25 @@ export function VoiceRecorder({
         },
       })
 
-      const upload = await fetch(signed.uploadUrl, {
-        method: 'PUT',
-        headers: signed.headers ?? {'Content-Type': contentType},
-        body: blob,
-      })
+      if (signed.mode === 'stub') {
+        await createDirectDraft()
+        return
+      }
+
+      let upload: Response
+      try {
+        upload = await fetch(signed.uploadUrl, {
+          method: 'PUT',
+          headers: signed.headers ?? {'Content-Type': contentType},
+          body: blob,
+        })
+      } catch (err) {
+        if (isStubUploadUrl(signed.uploadUrl)) {
+          await createDirectDraft()
+          return
+        }
+        throw err
+      }
       if (!upload.ok) {
         throw new Error('The recording could not be uploaded. Check your connection and try again.')
       }

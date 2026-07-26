@@ -76,6 +76,20 @@ export const createVoiceDraftBodySchema = z.object({
 })
 export type CreateVoiceDraftBody = z.infer<typeof createVoiceDraftBodySchema>
 
+const directVoiceDraftMaxBytes = 20 * 1024 * 1024
+const directVoiceDraftMaxBase64Length = Math.ceil(directVoiceDraftMaxBytes / 3) * 4
+
+export const createVoiceDraftDirectBodySchema = z.object({
+  audioBase64: z.string().min(1).max(directVoiceDraftMaxBase64Length),
+  contentType: z.string().min(3).max(120),
+  audioDurationMs: z.number().int().positive().max(20 * 60 * 1000),
+  languageHint: z.enum(['en', 'fr', 'auto']).default('auto'),
+  voiceConsent: z.literal(true),
+})
+export type CreateVoiceDraftDirectBody = z.infer<
+  typeof createVoiceDraftDirectBodySchema
+>
+
 export const submitVoiceDraftBodySchema = z.object({
   title: z.string().min(1).max(200),
   transcriptEdited: z.string().min(1).max(100_000),
@@ -164,6 +178,7 @@ export const voiceAgentEventBodySchema = z.object({
 export type VoiceAgentEventBody = z.infer<typeof voiceAgentEventBodySchema>
 
 export const completeVoiceAgentStoryBodySchema = z.object({
+  draftId: z.string().uuid().optional(),
   audioR2Key: z.string().min(1).optional(),
   audioDurationMs: z.number().int().positive().max(20 * 60 * 1000).optional(),
   providerRecordingId: z.string().max(200).optional(),

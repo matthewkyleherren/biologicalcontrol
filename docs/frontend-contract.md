@@ -37,10 +37,11 @@ Always gate the first fetch on Clerk's `isLoaded`.
 | GET | `/chat/token` | `{tokenRequest, clientId}` for Ably, or `{error, mode:'poll'}` when Ably is unconfigured |
 | POST | `/stories/drafts` | body `{title, body, year?, location?, sanityPersonIds[]}` |
 | POST | `/uploads/signed-url` | `{uploadUrl, key, mode, headers}` — body `{kind:'photo'\|'voice'\|'chat', contentType, extension?}` |
+| POST | `/voice-drafts/direct` | `{draft}` — body `{audioBase64, contentType, audioDurationMs, languageHint?:'en'\|'fr'\|'auto', voiceConsent:true}`; fallback for voice recordings when signed uploads return `mode:'stub'`; requires `DEEPGRAM_API_KEY` and stores `audioR2Key` as `unstored/{uuid}.{ext}` |
 | POST | `/voice-agent/sessions` | `{session, consentRequired, stageHints, deepgram}` — body `{languageHint?:'en'\|'fr'\|'auto', resumeSessionId?}`; creates/resumes a Deepgram Voice Agent interview session |
 | GET | `/voice-agent/sessions/:id` | `{session}` — owner only |
 | POST | `/voice-agent/sessions/:id/events` | `{session}` — body `{type:'stage'\|'meta'\|'user_text'\|'error'\|'heartbeat', payload:{stage?, meta?, text?, error?, consent?, agentSummary?}}` |
-| POST | `/voice-agent/sessions/:id/complete-story` | `{session, draftId}` — body `{audioR2Key, audioDurationMs, providerRecordingId?, interviewAudioR2Key?}`; creates/links a voice draft and enqueues transcription |
+| POST | `/voice-agent/sessions/:id/complete-story` | `{session, draftId}` — body `{audioR2Key?, audioDurationMs?, draftId?, providerRecordingId?, interviewAudioR2Key?}`; creates/links a voice draft and enqueues transcription, or links an already-created direct draft when `draftId` is supplied |
 | POST | `/voice-agent/sessions/:id/abandon` | `{session}` — marks the interview abandoned |
 
 `EnrichedConversation`:
@@ -73,9 +74,11 @@ When Ably is unconfigured the thread falls back to polling every 12s. **Keep bot
 
 Voice Agent interview uses Deepgram, not Ably. Call `POST /voice-agent/sessions`; when
 `deepgram.mode === 'direct_websocket'`, connect to `deepgram.url` with the Deepgram Agent
-SDK `tokenFactory` returning `deepgram.temporaryKey` (native browser `WebSocket` cannot set
-custom `Authorization` headers; the SDK uses Deepgram's supported browser auth path). Wait
-for `Welcome`, then send `deepgram.settings` as the `Settings` message. Client-side Deepgram
+browser auth path: first try native `WebSocket(deepgram.url, ['bearer',
+deepgram.temporaryKey])`; if the browser/server rejects subprotocol auth, retry with
+`?Authorization=Bearer%20...`. Native browser `WebSocket` cannot set custom
+`Authorization` headers. On `Welcome`/connection-ready, send `deepgram.settings` as the
+`Settings` message. Client-side Deepgram
 function calls (`save_people`, `save_when`, `save_where`, `save_title`, `begin_story`,
 `finish_story`) should be persisted through `/voice-agent/sessions/:id/events` before
 replying to Deepgram with `FunctionCallResponse`. The temporary key is minted through
