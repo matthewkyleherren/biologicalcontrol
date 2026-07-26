@@ -57,21 +57,26 @@ export function buildAgentPrompt(languageHint: VoiceAgentLanguageHint) {
     'You are not a general assistant. Stay in a structured interview and never answer unrelated questions at length.',
     'Never invent names, dates, places, dialogue, programme history, or facts. If something is unclear, ask once or leave it for review.',
     'Keep every agent turn short: one or two sentences. Ask exactly one thing at a time.',
+    'Speakers may be elderly and pause mid-thought. Do not treat a short silence as the end of their answer.',
+    'During metadata questions (who / when / where / title): wait until they have clearly finished a full answer before calling the save_* function.',
+    'If you are unsure whether they finished, ask once: "Anything else for that, or shall we continue?" — then wait.',
+    'Do not re-ask a question they already answered. Do not call save_* twice for the same stage.',
     'Accept incomplete answers. If the teller says they do not remember, move on kindly.',
     'If the teller starts the story early, follow them and gather missing metadata later.',
+    'Common words in this archive: biocontrol, biological control, IITA, Cotonou, Ibadan, Benin, Nigeria, cassava, mealybug, green mite, PHMD. Prefer those spellings when heard.',
     'Never claim the story is already published. Review and editor approval happen after this conversation.',
     languageInstruction(languageHint),
     '',
     'Interview state machine:',
     'GREETING: Warm hello; say you will ask a few short questions and then invite the story.',
     'CONSENT: Confirm they understand we record their voice so a machine can write it down, an editor may listen, and they choose later whether the voice itself is published.',
-    'WHO: Ask "Who is in this story - you, and anyone else we should name?" Then call save_people.',
-    'WHEN: Ask "About when was this - a year, or roughly which years?" Accept soft dates like "late eighties". Then call save_when.',
-    'WHERE: Ask "Where were you - Cotonou, Ibadan, a field site, home...?" Then call save_where.',
-    'TITLE: Ask "What should we call this one?" Then call save_title.',
-    'STORY: Say "This sounds wonderful. Tell me the story, in your own time." Then call begin_story and mostly listen.',
-    'CONFIRM: Briefly summarize who, when, where, and title. Ask whether to write it down now.',
-    'DONE: When the teller is finished, call finish_story. The UI will show review; stop interviewing unless they ask to retell.',
+    'WHO: Ask "Who is in this story - you, and anyone else we should name?" Wait for a complete answer, then call save_people once.',
+    'WHEN: Ask "About when was this - a year, or roughly which years?" Accept soft dates like "late eighties". Wait, then call save_when once.',
+    'WHERE: Ask "Where were you - Cotonou, Ibadan, a field site, home...?" Wait, then call save_where once.',
+    'TITLE: Ask "What should we call this one?" Wait, then call save_title once.',
+    'STORY: Say "This sounds wonderful. Tell me the story, in your own time." Then call begin_story and mostly listen. Do not interrupt the story for metadata.',
+    'CONFIRM: Only after a clear signal they finished the story (for example "that\'s all", "the end", a long silence after a concluding sentence). Briefly summarize who, when, where, and title, and ask whether to write it down now.',
+    'DONE: When they confirm, call finish_story once. The UI will show review; stop interviewing unless they ask to retell.',
   ].join('\n');
 }
 
@@ -232,8 +237,41 @@ function buildThinkConfig(input: DeepgramAgentConfigInput) {
 }
 
 export function buildAgentConfig(input: DeepgramAgentConfigInput) {
+  // English-only Flux is more accurate; use multilingual only when FR is likely.
+  const useMulti = input.languageHint === 'fr' || input.languageHint === 'auto';
   const languageHints =
-    input.languageHint === 'auto' ? ['en', 'fr'] : input.languageHint === 'fr' ? ['fr', 'en'] : ['en', 'fr'];
+    input.languageHint === 'fr' ? ['fr', 'en'] : input.languageHint === 'en' ? ['en'] : ['en', 'fr'];
+
+  const listenProvider: Record<string, unknown> = {
+    type: 'deepgram',
+    version: 'v2',
+    model: useMulti ? 'flux-general-multi' : 'flux-general-en',
+    // Higher EOT + longer timeout = fewer false "end of answer" cuts for elderly speakers.
+    // Do NOT set eager_eot_threshold — eager turns make the agent jump ahead mid-answer.
+    eot_threshold: 0.85,
+    eot_timeout_ms: 9000,
+    keyterms: [
+      'biocontrol',
+      'biological control',
+      'Biological Control Programme',
+      'IITA',
+      'Cotonou',
+      'Ibadan',
+      'Benin',
+      'Nigeria',
+      'cassava',
+      'mealybug',
+      'green mite',
+      'PHMD',
+      'Apoanagyrus',
+      'Epidinocarsis',
+      'Neuenschwander',
+      'Herren',
+    ],
+  };
+  if (useMulti) {
+    listenProvider.language_hints = languageHints;
+  }
 
   return {
     type: 'Settings',
@@ -255,23 +293,7 @@ export function buildAgentConfig(input: DeepgramAgentConfigInput) {
     },
     agent: {
       listen: {
-        provider: {
-          type: 'deepgram',
-          version: 'v2',
-          model: 'flux-general-multi',
-          language_hints: languageHints,
-          eot_threshold: 0.7,
-          eager_eot_threshold: 0.5,
-          eot_timeout_ms: 5000,
-          keyterms: [
-            'biological control',
-            'IITA',
-            'Cotonou',
-            'Ibadan',
-            'cassava',
-            'mealybug',
-          ],
-        },
+        provider: listenProvider,
       },
       think: buildThinkConfig(input),
       speak: {
@@ -279,7 +301,7 @@ export function buildAgentConfig(input: DeepgramAgentConfigInput) {
           type: 'deepgram',
           version: 'v1',
           model: 'aura-2-thalia-en',
-          speed: 0.95,
+          speed: 0.92,
         },
       },
       greeting: greeting(input.languageHint),

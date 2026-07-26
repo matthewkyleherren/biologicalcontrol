@@ -70,11 +70,18 @@ export function VoiceContribute({getAccessToken}: {getAccessToken: () => Promise
     setFlow(readyForReview(nextDraft) ? 'review' : 'polling')
   }, [])
 
-  const handleDraftId = useCallback((id: string) => {
-    setDraftId(id)
-    setError('')
-    setFlow('polling')
-  }, [])
+  const handleDraftId = useCallback(
+    (id: string) => {
+      setDraftId(id)
+      setError('')
+      setFlow('polling')
+      // Orb direct-transcribe drafts are often already ready — check immediately.
+      void pollDraft(id).catch((err) => {
+        setError(errorMessage(err, 'The draft could not be checked. Keep this page open and try again.'))
+      })
+    },
+    [pollDraft]
+  )
 
   function retell() {
     setDraft(null)

@@ -439,9 +439,11 @@ export function VoiceOrb({
   }
 
   function markStoryStarted() {
-    recordedChunksRef.current = []
-    storyStartedAtRef.current = Date.now()
-    mediaRecorderRef.current?.requestData()
+    // Keep audio already captured — clearing here raced with finish_story and
+    // produced empty blobs. Prefer a slightly longer archive over losing the story.
+    if (!storyStartedAtRef.current) {
+      storyStartedAtRef.current = Date.now()
+    }
   }
 
   async function stopMediaRecorder() {
@@ -623,10 +625,16 @@ export function VoiceOrb({
     }
   }
 
-  async function createDirectDraft(blob: Blob, durationMs: number, contentType: string) {
+  async function createDirectDraft(
+    blob: Blob,
+    durationMs: number,
+    contentType: string,
+    activeSessionId: string | null,
+    languageHint: VoiceAgentSession['languageHint']
+  ) {
     if (blob.size > DIRECT_UPLOAD_BYTE_LIMIT) {
       throw new Error(
-        'This recording is too long to save without storage configured. Please make a shorter recording for now, or record instead.'
+        'This recording is too long to send in one go. Please make a shorter recording for now, or record instead.'
       )
     }
 
@@ -637,83 +645,88 @@ export function VoiceOrb({
         audioBase64: await blobToBase64(blob),
         contentType,
         audioDurationMs: Math.min(durationMs, MAX_DURATION_MS),
-        languageHint: sessionRef.current?.languageHint ?? 'auto',
+        languageHint: languageHint ?? 'auto',
         voiceConsent: true,
       },
     })
 
-    const activeSessionId = sessionRef.current?.id
     if (activeSessionId) {
-      const completed = await apiFetch<CompleteStoryResponse>(
-        `/voice-agent/sessions/${activeSessionId}/complete-story`,
-        {
-          method: 'POST',
-          getAccessToken,
-          body: {draftId: data.draft.id},
-        }
-      )
-      if (completed.session) setSessionState(completed.session)
+      try {
+        const completed = await apiFetch<CompleteStoryResponse>(
+          `/voice-agent/sessions/${activeSessionId}/complete-story`,
+          {
+            method: 'POST',
+            getAccessToken,
+            body: {draftId: data.draft.id},
+          }
+        )
+        if (completed.session) setSessionState(completed.session)
+      } catch {
+        // Draft already exists for review — linking the session is best-effort.
+      }
     }
 
     return data.draft.id
   }
 
-  async function uploadOrCreateDraft(blob: Blob, durationMs: number) {
+  async function uploadOrCreateDraft(
+    blob: Blob,
+    durationMs: number,
+    activeSessionId: string,
+    languageHint: VoiceAgentSession['languageHint']
+  ) {
     if (!blob.size) throw new Error('The live interviewer did not record enough audio to review.')
-    const activeSessionId = sessionRef.current?.id
-    if (!activeSessionId) throw new Error('The live interviewer session is no longer available.')
 
     const contentType = contentTypeForUpload(blob)
-    const signed = await apiFetch<SignedUploadResponse>('/uploads/signed-url', {
-      method: 'POST',
-      getAccessToken,
-      body: {
-        kind: 'voice',
-        contentType,
-        extension: extensionForContentType(contentType),
-      },
-    })
-
-    const createUnstoredDraft = async () => createDirectDraft(blob, durationMs, contentType)
-
-    if (signed.mode === 'stub') {
-      return createUnstoredDraft()
+    // Prefer Deepgram-direct. Production GCS browser PUTs often fail with Safari
+    // "Load failed" (CORS), which was ending interviews after a good conversation.
+    if (blob.size <= DIRECT_UPLOAD_BYTE_LIMIT) {
+      return createDirectDraft(blob, durationMs, contentType, activeSessionId, languageHint)
     }
 
-    let upload: Response
     try {
-      upload = await fetch(signed.uploadUrl, {
+      const signed = await apiFetch<SignedUploadResponse>('/uploads/signed-url', {
+        method: 'POST',
+        getAccessToken,
+        body: {
+          kind: 'voice',
+          contentType,
+          extension: extensionForContentType(contentType),
+        },
+      })
+
+      if (signed.mode === 'stub' || isStubUploadUrl(signed.uploadUrl)) {
+        return createDirectDraft(blob, durationMs, contentType, activeSessionId, languageHint)
+      }
+
+      const upload = await fetch(signed.uploadUrl, {
         method: 'PUT',
         headers: signed.headers ?? {'Content-Type': contentType},
         body: blob,
       })
-    } catch (err) {
-      if (isStubUploadUrl(signed.uploadUrl)) {
-        return createUnstoredDraft()
+      if (!upload.ok) {
+        return createDirectDraft(blob, durationMs, contentType, activeSessionId, languageHint)
       }
-      throw err
-    }
 
-    if (!upload.ok) {
-      throw new Error('The recording could not be uploaded. Check your connection and try again.')
-    }
-
-    const completed = await apiFetch<CompleteStoryResponse>(
-      `/voice-agent/sessions/${activeSessionId}/complete-story`,
-      {
-        method: 'POST',
-        getAccessToken,
-        body: {
-          audioR2Key: signed.key,
-          audioDurationMs: Math.min(durationMs, MAX_DURATION_MS),
-        },
+      const completed = await apiFetch<CompleteStoryResponse>(
+        `/voice-agent/sessions/${activeSessionId}/complete-story`,
+        {
+          method: 'POST',
+          getAccessToken,
+          body: {
+            audioR2Key: signed.key,
+            audioDurationMs: Math.min(durationMs, MAX_DURATION_MS),
+          },
+        }
+      )
+      if (completed.session) setSessionState(completed.session)
+      if (!completed.draftId) {
+        return createDirectDraft(blob, durationMs, contentType, activeSessionId, languageHint)
       }
-    )
-    if (completed.session) setSessionState(completed.session)
-    if (!completed.draftId) {
-      throw new Error('The live interviewer finished, but no review draft is ready yet. Record instead for now.')
+      return completed.draftId
+    } catch {
+      return createDirectDraft(blob, durationMs, contentType, activeSessionId, languageHint)
     }
-    return completed.draftId
   }
 
   async function finishFromRecording() {
@@ -722,6 +735,9 @@ export function VoiceOrb({
     setState('working')
     setError('')
     closingRef.current = true
+
+    const activeSessionId = sessionRef.current?.id ?? null
+    const languageHint = sessionRef.current?.languageHint ?? 'auto'
     wsRef.current?.close()
 
     try {
@@ -729,13 +745,35 @@ export function VoiceOrb({
       const startedAt = storyStartedAtRef.current || recordingStartedAtRef.current
       const durationMs = startedAt ? Math.max(1, Date.now() - startedAt) : 1
       cleanupConnection(false)
-      if (!blob) throw new Error('The live interviewer could not save the recording. Record instead for now.')
-      const draftId = await uploadOrCreateDraft(blob, durationMs)
+      if (!blob?.size) {
+        throw new Error('The live interviewer could not save the recording. Record instead for now.')
+      }
+      if (!activeSessionId) {
+        // Still try to create a reviewable draft even if the session row is gone.
+        const draftId = await createDirectDraft(
+          blob,
+          durationMs,
+          contentTypeForUpload(blob),
+          null,
+          languageHint
+        )
+        onDraftId(draftId)
+        return
+      }
+      const draftId = await uploadOrCreateDraft(blob, durationMs, activeSessionId, languageHint)
       onDraftId(draftId)
     } catch (err) {
       setState('error')
       setFallbackOffered(true)
-      setError(errorMessage(err, 'The live interviewer could not write this down. Record the story instead.'))
+      const message = errorMessage(
+        err,
+        'The live interviewer could not write this down. Record the story instead.'
+      )
+      setError(
+        /load failed|failed to fetch|networkerror/i.test(message)
+          ? 'Saving the story failed on the network. Tap Record instead, or try Tell it out loud again.'
+          : message
+      )
     }
   }
 
