@@ -22,37 +22,29 @@ export function StoryNav({previous, next, className}: StoryNavProps) {
   if (!previous && !next) return null
 
   return (
-    <nav aria-label="More stories" className={cn('flex flex-col gap-3 sm:flex-row', className)}>
+    <nav aria-label="More stories" className={cn('story-foot-nav', className)}>
       {previous ? (
         <Link
           href={`/stories/${previous.slug}`}
-          className="card card--interactive group flex min-w-0 items-center gap-3 p-4 sm:mr-auto sm:max-w-[20rem]"
+          className="story-foot-nav-link story-foot-nav-link--prev"
         >
-          <Icon name="back" size={18} className="shrink-0 text-ink-faint" />
+          <Icon name="back" size={16} />
           <span className="min-w-0">
-            <span className="block text-xs font-semibold uppercase tracking-[0.08em] text-ink-faint">
-              Previous story
-            </span>
-            <span className="truncate-1 block text-base font-medium text-ink group-hover:text-accent">
-              {previous.title}
-            </span>
+            <span className="story-foot-nav-label">Previous story</span>
+            <span className="story-foot-nav-title">{previous.title}</span>
           </span>
         </Link>
       ) : null}
       {next ? (
         <Link
           href={`/stories/${next.slug}`}
-          className="card card--interactive group flex min-w-0 items-center justify-end gap-3 p-4 text-right sm:ml-auto sm:max-w-[20rem]"
+          className="story-foot-nav-link story-foot-nav-link--next"
         >
           <span className="min-w-0">
-            <span className="block text-xs font-semibold uppercase tracking-[0.08em] text-ink-faint">
-              Next story
-            </span>
-            <span className="truncate-1 block text-base font-medium text-ink group-hover:text-accent">
-              {next.title}
-            </span>
+            <span className="story-foot-nav-label">Next story</span>
+            <span className="story-foot-nav-title">{next.title}</span>
           </span>
-          <Icon name="forward" size={18} className="shrink-0 text-ink-faint" />
+          <Icon name="forward" size={16} />
         </Link>
       ) : null}
     </nav>

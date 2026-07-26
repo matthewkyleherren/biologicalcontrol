@@ -672,6 +672,7 @@ export function fallbackStory(slug: string) {
     body: [
       {
         _type: 'block',
+        _key: 'lead',
         style: 'normal',
         markDefs: [],
         children: [
@@ -683,12 +684,58 @@ export function fallbackStory(slug: string) {
       },
       {
         _type: 'block',
+        _key: 'h-what-happened',
+        style: 'h2',
+        markDefs: [],
+        children: [{_type: 'span', text: 'What happened'}],
+      },
+      {
+        _type: 'block',
+        _key: 'p-what',
         style: 'normal',
         markDefs: [],
         children: [
           {
             _type: 'span',
-            text: 'biologicalcontrol.org is modelled on folklore.org: short, specific, human stories from the community that shared the compound. Replace this placeholder with your memory.',
+            text: 'The official reports kept the yields and the release counts. What they could not keep was the texture: who drove overnight, who stayed late in the insectary, which kid on station learned the smell of honeydew before they learned long division.',
+          },
+        ],
+      },
+      {
+        _type: 'block',
+        _key: 'h-who-was-there',
+        style: 'h2',
+        markDefs: [],
+        children: [{_type: 'span', text: 'Who was there'}],
+      },
+      {
+        _type: 'block',
+        _key: 'p-who',
+        style: 'normal',
+        markDefs: [],
+        children: [
+          {
+            _type: 'span',
+            text: 'Names belong here. Spouses, national-programme friends, technicians, pilots, quarantine officers — the compound was never only the people on the staff annex. If you remember a name misspelled on a shipping label, write that down too.',
+          },
+        ],
+      },
+      {
+        _type: 'block',
+        _key: 'h-why-it-matters',
+        style: 'h2',
+        markDefs: [],
+        children: [{_type: 'span', text: 'Why it still matters'}],
+      },
+      {
+        _type: 'block',
+        _key: 'p-why',
+        style: 'normal',
+        markDefs: [],
+        children: [
+          {
+            _type: 'span',
+            text: 'biologicalcontrol.org is modelled on folklore.org: short, specific, human stories from the community that shared the compound. Replace this placeholder with your memory. Two paragraphs count.',
           },
         ],
       },
