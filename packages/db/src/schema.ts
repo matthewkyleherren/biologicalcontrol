@@ -323,7 +323,7 @@ export const voiceStoryDrafts = pgTable('voice_story_drafts', {
   transcriptEdited: text('transcript_edited'),
   title: varchar('title', {length: 200}),
   location: varchar('location', {length: 200}),
-  yearText: varchar('year_text', {length: 120}),
+  yearText: varchar('year_text', {length: 80}),
   sanityPersonIds: jsonb('sanity_person_ids').$type<string[]>().default([]),
   peopleNames: jsonb('people_names').$type<string[]>().default([]),
   publishAudio: boolean('publish_audio').notNull().default(false),

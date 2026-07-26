@@ -83,7 +83,7 @@ export const submitVoiceDraftBodySchema = z.object({
   publishAudio: z.boolean().default(false),
   year: z.number().int().min(1975).max(2030).optional(),
   location: z.string().max(200).optional(),
-  yearText: z.string().max(120).optional(),
+  yearText: z.string().max(80).optional(),
 })
 export type SubmitVoiceDraftBody = z.infer<typeof submitVoiceDraftBodySchema>
 
@@ -114,7 +114,7 @@ export const voiceAgentMetaSchema = z.object({
   peopleNames: z.array(z.string()).optional(),
   peopleSanityIds: z.array(z.string()).optional(),
   year: z.number().int().optional(),
-  yearText: z.string().max(120).optional(),
+  yearText: z.string().max(80).optional(),
   location: z.string().max(200).optional(),
   title: z.string().max(200).optional(),
 })
