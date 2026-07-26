@@ -21,6 +21,7 @@ export function voiceRoutes(db: Database | null) {
 
     const body = createVoiceDraftBodySchema.parse(await c.req.json())
     const user = await ensureAppUser(db, auth)
+    const env = c.get('env')
 
     await db
       .update(users)
@@ -45,10 +46,15 @@ export function voiceRoutes(db: Database | null) {
       subjectType: 'voice_story_draft',
       subjectId: draft!.id,
       provider: 'deepgram',
-      inngestEventKey: c.get('env').INNGEST_EVENT_KEY,
+      inngestEventKey: env.INNGEST_EVENT_KEY,
+      env,
     })
 
-    return c.json({draft}, 201)
+    const freshDraft = await db.query.voiceStoryDrafts.findFirst({
+      where: eq(voiceStoryDrafts.id, draft!.id),
+    })
+
+    return c.json({draft: freshDraft ?? draft}, 201)
   })
 
   app.get('/voice-drafts/:id', async (c) => {
@@ -88,6 +94,8 @@ export function voiceRoutes(db: Database | null) {
         sanityPersonIds: body.sanityPersonIds,
         publishAudio: body.publishAudio,
         year: body.year,
+        location: body.location,
+        yearText: body.yearText,
         status: 'submitted',
         updatedAt: new Date(),
       })
@@ -100,6 +108,7 @@ export function voiceRoutes(db: Database | null) {
       subjectId: draft.id,
       provider: 'sanity',
       inngestEventKey: c.get('env').INNGEST_EVENT_KEY,
+      env: c.get('env'),
     })
 
     return c.json({draft: updated})

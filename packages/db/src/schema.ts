@@ -39,7 +39,27 @@ export const jobTypeEnum = pgEnum('job_type', [
   'face_match',
   'date_infer',
   'transcribe',
+  'clarity_edit',
   'publish_story',
+])
+export const voiceAgentSessionStatusEnum = pgEnum('voice_agent_session_status', [
+  'idle',
+  'active',
+  'processing',
+  'review',
+  'abandoned',
+  'completed',
+])
+export const voiceAgentStageEnum = pgEnum('voice_agent_stage', [
+  'greeting',
+  'consent',
+  'who',
+  'when',
+  'where',
+  'title',
+  'story',
+  'confirm',
+  'done',
 ])
 export const jobStatusEnum = pgEnum('job_status', [
   'queued',
@@ -302,12 +322,46 @@ export const voiceStoryDrafts = pgTable('voice_story_drafts', {
   transcriptRaw: text('transcript_raw'),
   transcriptEdited: text('transcript_edited'),
   title: varchar('title', {length: 200}),
+  location: varchar('location', {length: 200}),
+  yearText: varchar('year_text', {length: 120}),
   sanityPersonIds: jsonb('sanity_person_ids').$type<string[]>().default([]),
+  peopleNames: jsonb('people_names').$type<string[]>().default([]),
   publishAudio: boolean('publish_audio').notNull().default(false),
   status: voiceDraftStatusEnum('status').notNull().default('recording'),
   sanityStoryId: varchar('sanity_story_id', {length: 128}),
   consentRecordedAt: timestamp('consent_recorded_at', {withTimezone: true}),
   year: integer('year'),
+  ...timestamps,
+})
+
+export type VoiceAgentMeta = {
+  peopleNames?: string[]
+  peopleSanityIds?: string[]
+  year?: number
+  yearText?: string
+  location?: string
+  title?: string
+}
+
+export const voiceAgentSessions = pgTable('voice_agent_sessions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.id, {onDelete: 'cascade'}),
+  draftId: uuid('draft_id').references(() => voiceStoryDrafts.id, {onDelete: 'set null'}),
+  status: voiceAgentSessionStatusEnum('status').notNull().default('idle'),
+  stage: voiceAgentStageEnum('stage').notNull().default('greeting'),
+  languageHint: languageHintEnum('language_hint').notNull().default('auto'),
+  provider: varchar('provider', {length: 64}).notNull().default('deepgram_agent'),
+  providerSessionRef: text('provider_session_ref'),
+  metaJson: jsonb('meta_json').$type<VoiceAgentMeta>().default({}),
+  interviewAudioR2Key: text('interview_audio_r2_key'),
+  storyAudioR2Key: text('story_audio_r2_key'),
+  transcriptInterview: text('transcript_interview'),
+  agentSummary: text('agent_summary'),
+  consentRecordedAt: timestamp('consent_recorded_at', {withTimezone: true}),
+  error: text('error'),
+  completedAt: timestamp('completed_at', {withTimezone: true}),
   ...timestamps,
 })
 
