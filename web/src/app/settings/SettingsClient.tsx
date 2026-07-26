@@ -18,7 +18,6 @@ import {
   Skeleton,
   TextField,
 } from '@/components/ui'
-import {AppearanceSection} from '@/components/profile/AppearanceSection'
 import {rosterFacts, type RosterPerson} from '@/components/profile/roster'
 
 type ClaimRow = {
@@ -242,7 +241,7 @@ export function SettingsClient({roster}: {roster: RosterPerson[]}) {
   if (!isLoaded || (!me && !loadFailed)) {
     return (
       <main className="container container-narrow py-8 md:py-12">
-        <PageHeader title="Settings" subtitle="Your details, your card in the archive, and how this site looks." />
+        <PageHeader title="Settings" subtitle="Your details and your card in the archive." />
         <LoadingRegion label="Loading your settings">
           <Skeleton className="mt-6 h-24 w-full rounded-md" />
           <Skeleton className="mt-4 h-24 w-full rounded-md" />
@@ -274,7 +273,7 @@ export function SettingsClient({roster}: {roster: RosterPerson[]}) {
     <main className="container container-narrow py-8 md:py-12">
       <PageHeader
         title="Settings"
-        subtitle="Your details, your card in the archive, and how this site looks."
+        subtitle="Your details and your card in the archive."
         action={
           <ButtonLink href="/me" variant="ghost" icon="user">
             Your profile
@@ -284,7 +283,7 @@ export function SettingsClient({roster}: {roster: RosterPerson[]}) {
 
       {/* --- Your details --------------------------------------------------- */}
       <section aria-labelledby="settings-details" className="border-t border-rule pt-8">
-        <h2 id="settings-details" className="text-[1.375rem] font-bold tracking-[-0.02em] text-ink">
+        <h2 id="settings-details" className="font-[family-name:var(--font-display)] text-[1.375rem] font-normal tracking-[-0.01em] text-ink/80">
           Your details
         </h2>
         <p className="mt-2 max-w-[60ch] text-[1.0625rem] leading-relaxed text-ink-soft">
@@ -343,7 +342,7 @@ export function SettingsClient({roster}: {roster: RosterPerson[]}) {
 
       {/* --- Your card in the archive --------------------------------------- */}
       <section aria-labelledby="settings-claim" className="mt-10 border-t border-rule pt-8">
-        <h2 id="settings-claim" className="text-[1.375rem] font-bold tracking-[-0.02em] text-ink">
+        <h2 id="settings-claim" className="font-[family-name:var(--font-display)] text-[1.375rem] font-normal tracking-[-0.01em] text-ink/80">
           Your card in the archive
         </h2>
         <p className="mt-2 max-w-[60ch] text-[1.0625rem] leading-relaxed text-ink-soft">
@@ -481,7 +480,7 @@ export function SettingsClient({roster}: {roster: RosterPerson[]}) {
         <section aria-labelledby="settings-pending" className="mt-10 border-t border-rule pt-8">
           <h2
             id="settings-pending"
-            className="text-[1.375rem] font-bold tracking-[-0.02em] text-ink"
+            className="font-[family-name:var(--font-display)] text-[1.375rem] font-normal tracking-[-0.01em] text-ink/80"
           >
             Pending claims
           </h2>
@@ -543,24 +542,9 @@ export function SettingsClient({roster}: {roster: RosterPerson[]}) {
         </section>
       ) : null}
 
-      {/* --- Appearance ------------------------------------------------------ */}
-      <section aria-labelledby="settings-appearance" className="mt-10 border-t border-rule pt-8">
-        <h2
-          id="settings-appearance"
-          className="text-[1.375rem] font-bold tracking-[-0.02em] text-ink"
-        >
-          Appearance
-        </h2>
-        <p className="mt-2 max-w-[60ch] text-[1.0625rem] leading-relaxed text-ink-soft">
-          Default is the readable one. Typewriter and 1994 are an easter egg — they restyle the whole
-          site as a joke, and everything still works. Your choice is remembered in this browser only.
-        </p>
-        <AppearanceSection />
-      </section>
-
       {/* --- Account --------------------------------------------------------- */}
       <section aria-labelledby="settings-account" className="mt-10 border-t border-rule pt-8">
-        <h2 id="settings-account" className="text-[1.375rem] font-bold tracking-[-0.02em] text-ink">
+        <h2 id="settings-account" className="font-[family-name:var(--font-display)] text-[1.375rem] font-normal tracking-[-0.01em] text-ink/80">
           Account
         </h2>
         <dl className="mt-5 border-t border-rule">

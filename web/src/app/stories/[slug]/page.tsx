@@ -2,7 +2,6 @@ import type {Metadata} from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
 import {notFound} from 'next/navigation'
-import {Newsreader} from 'next/font/google'
 import {client} from '@/sanity/client'
 import {ALL_STORIES_QUERY, STORY_QUERY} from '@/sanity/queries'
 import {StoryBody} from '@/components/StoryBody'
@@ -14,12 +13,6 @@ import {fallbackStories, fallbackStory} from '@/lib/fallback-content'
 import {countWords} from '@/lib/portable-text'
 import {extractHeadings} from '@/lib/story-headings'
 import type {StorySummary} from '@/lib/types'
-
-const newsreader = Newsreader({
-  subsets: ['latin'],
-  variable: '--font-story-serif',
-  display: 'swap',
-})
 
 export const revalidate = 60
 
@@ -61,7 +54,7 @@ export default async function StoryPage({params}: Props) {
   const authorHref = resolved.narrator?.slug ? `/people/${resolved.narrator.slug}` : null
 
   return (
-    <main className={`${newsreader.variable} pb-8`}>
+    <main className="pb-8">
       <StoryReader
         title={resolved.title}
         slug={resolved.slug}

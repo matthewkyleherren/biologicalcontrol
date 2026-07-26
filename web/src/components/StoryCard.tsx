@@ -29,7 +29,7 @@ export function StoryCard({title, slug, excerpt, year, location, narrator, mainI
           </Link>
         </h2>
         {excerpt ? (
-          <p className="mt-3 max-w-[38rem] text-lg leading-relaxed text-ink-soft">
+          <p className="mt-3 max-w-[38rem] font-[family-name:var(--font-body)] text-base leading-relaxed text-ink-soft md:text-[0.9375rem] md:leading-[1.55]">
             {excerpt}
           </p>
         ) : null}

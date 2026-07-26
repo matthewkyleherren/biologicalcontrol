@@ -11,11 +11,9 @@ import {useUnread} from './UnreadProvider'
 /**
  * One bar, one row, one account control.
  *
- * The header it replaces carried nine separate targets — five nav links, a CTA,
- * a sign-in button, a profile link, a Clerk user button and a settings gear —
- * plus an inline 1994-theme marquee. On desktop this keeps the links; on mobile
- * it keeps only the wordmark and the account menu, because navigation lives in
- * the bottom tab bar where a thumb can reach it.
+ * On desktop this keeps the primary links; on mobile it keeps only the wordmark
+ * and the account menu, because navigation lives in the bottom tab bar where a
+ * thumb can reach it.
  */
 export function SiteHeader() {
   const pathname = usePathname()

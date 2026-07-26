@@ -1,9 +1,9 @@
 /**
  * One icon set for the whole app — a small hand-rolled Feather-style family.
  *
- * Deliberately not a dependency: the set is tiny, the stroke weight matches
- * Geist's, and mixing icon libraries (or using emoji as icons) is the fastest
- * way to make an interface look assembled rather than designed.
+ * Deliberately not a dependency: the set is tiny, the 1.5px stroke matches the
+ * Making Software–inspired chrome, and mixing icon libraries (or using emoji as
+ * icons) is the fastest way to make an interface look assembled rather than designed.
  *
  * Icons are decorative by default (`aria-hidden`). Pass a `label` only when the
  * icon is the *only* content of a control and carries its accessible name.
@@ -165,7 +165,7 @@ export type IconProps = {
   strokeWidth?: number
 }
 
-export function Icon({name, size = 20, label, className, strokeWidth = 1.75}: IconProps) {
+export function Icon({name, size = 20, label, className, strokeWidth = 1.5}: IconProps) {
   return (
     <svg
       width={size}

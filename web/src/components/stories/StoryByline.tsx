@@ -41,7 +41,7 @@ export function StoryByline({narrator, size = 'sm', className}: StoryBylineProps
         {narrator.slug ? (
           <Link
             href={`/people/${narrator.slug}`}
-            className="font-medium text-ink underline decoration-rule underline-offset-[0.18em] hover:text-accent hover:decoration-accent"
+            className="font-medium text-ink underline decoration-sky underline-offset-[3px] hover:text-accent"
           >
             {narrator.name}
           </Link>
