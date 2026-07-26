@@ -219,13 +219,12 @@ Browser (orb UI)
 
 | Option | Role | Pros | Cons | Recommendation |
 | --- | --- | --- | --- | --- |
-| **OpenAI Realtime API** | Live agent (STT+LLM+TTS) | Strong conversational UX, tools/function calls for stage advances | Cost; need careful prompt/guardrails; another vendor beside Deepgram | **Primary candidate for interview layer** |
-| **Deepgram Voice Agent** | Live agent + excellent ASR | One vendor with our ASR pick; good speech | Agent product maturity / TTS quality TBD | Strong alternative; spike both |
-| **Custom**: Deepgram streaming STT + GPT-4.1/4o + TTS (OpenAI/ElevenLabs) | Full control | Maximum control over stages | More glue, latency tuning | Fallback if managed agents fight our state machine |
+| **Deepgram Voice Agent** | Live agent (listen + speak) + Nova ASR | One speech vendor with Phase A; ~$210 credit; strong EN/FR ASR | “Think” still needs an LLM key (OpenRouter / OpenAI / Anthropic) | **Primary — locked** |
+| **OpenAI Realtime API** | Live agent (STT+LLM+TTS) | Strong conversational UX | Second realtime voice stack; extra cost | Fallback only if Voice Agent UX fails |
+| **Custom**: Deepgram streaming STT + LLM + TTS | Full control | Maximum control over stages | More glue, latency tuning | Fallback if managed agent fights our state machine |
 | **Browser SpeechRecognition** | Device STT only | Cheap | Unreliable, not archival, weak FR | **UX hint only — never source of truth** |
-| **ElevenLabs ConvAI** | Polished voice | Nice TTS | Extra vendor; story archive still needs our ASR | Optional TTS later |
 
-**Spike decision (before build):** 1–2 day bakeoff — OpenAI Realtime vs Deepgram Voice Agent — measured on: barge-in, FR/EN mix, latency on mid-tier Android Chrome, cost per 10-min session, ease of tool calls for stage/`save_meta`.
+**Decision (2026-07-26):** Deepgram-first. Phase A = Nova/batch ASR. Phase B = Voice Agent for the orb. LLM for agent “think” + clarity edit via **OpenRouter** (or direct OpenAI/Anthropic) — not OpenAI Realtime.
 
 ### 5.3 Clarity edit job
 
@@ -365,7 +364,7 @@ FR strings: maintain in the same file as other product chrome; agent system prom
 
 ## 10. Open decisions (need product confirmation)
 
-1. **Provider spike winner** — OpenAI Realtime vs Deepgram Voice Agent?
+1. **LLM for Voice Agent “think” + clarity edit** — OpenRouter vs direct OpenAI/Anthropic?
 2. **Is Phase A (monologue) required before B**, or do we prototype the orb directly with stubbed review?
 3. **Approximate dates** — store free-text `yearText` (“late eighties”) in addition to integer `year`?
 4. **Interview audio retention** — 30 days vs keep with published provenance?
