@@ -99,8 +99,7 @@ export function WriteContribute({
       <div className="mt-8 space-y-6" aria-live="polite">
         <Alert tone="success">{resultMessage}</Alert>
         <p className="max-w-[46ch] text-lg leading-relaxed text-ink-soft">
-          An editor reads every story before it appears on the site — that usually takes a few
-          days.
+          It waits in Review until someone approves it for the public archive.
         </p>
         <div className="flex flex-wrap gap-3">
           <ButtonLink href="/stories" variant="primary">

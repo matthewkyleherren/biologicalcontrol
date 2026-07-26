@@ -53,6 +53,9 @@ export function AccountMenu() {
       <MenuLink href="/contribute" icon="compose">
         Share a story
       </MenuLink>
+      <MenuLink href="/review" icon="check">
+        Review submissions
+      </MenuLink>
       <MenuLink href="/settings" icon="settings">
         Settings
       </MenuLink>

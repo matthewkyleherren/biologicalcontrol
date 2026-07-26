@@ -15,14 +15,16 @@ export async function sanityMutate(env: ApiEnv, mutations: SanityMutation[]) {
     return {ok: false as const, reason: 'unconfigured' as const}
   }
 
-  const url = `https://${projectId}.api.sanity.io/v2025-01-01/data/mutate/${dataset}`
+  // returnIds=true is required — without it, create results omit `id` and callers
+  // retry forever, spawning duplicate documents (see motorcycle story incident).
+  const url = `https://${projectId}.api.sanity.io/v2025-01-01/data/mutate/${dataset}?returnIds=true`
   const res = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({mutations}),
+    body: JSON.stringify({mutations, returnIds: true}),
   })
 
   if (!res.ok) {
@@ -31,6 +33,6 @@ export async function sanityMutate(env: ApiEnv, mutations: SanityMutation[]) {
     return {ok: false as const, reason: 'error' as const, status: res.status, text}
   }
 
-  const data = (await res.json()) as {results?: Array<{id?: string}>}
+  const data = (await res.json()) as {results?: Array<{id?: string; operation?: string}>}
   return {ok: true as const, data}
 }

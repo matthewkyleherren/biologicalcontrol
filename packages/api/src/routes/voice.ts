@@ -208,6 +208,13 @@ export function voiceRoutes(db: Database | null) {
       return c.json({error: 'Not found'}, 404)
     }
 
+    if (draft.sanityStoryId || draft.status === 'submitted' || draft.status === 'published') {
+      return c.json({
+        draft,
+        message: 'Already sent for review.',
+      })
+    }
+
     const [updated] = await db
       .update(voiceStoryDrafts)
       .set({
@@ -233,7 +240,14 @@ export function voiceRoutes(db: Database | null) {
       env: c.get('env'),
     })
 
-    return c.json({draft: updated})
+    const fresh = await db.query.voiceStoryDrafts.findFirst({
+      where: eq(voiceStoryDrafts.id, draft.id),
+    })
+
+    return c.json({
+      draft: fresh ?? updated,
+      message: 'Sent for review. An editor will approve it before it appears in the public archive.',
+    })
   })
 
   return app

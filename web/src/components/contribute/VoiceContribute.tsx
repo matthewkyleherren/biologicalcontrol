@@ -101,13 +101,17 @@ export function VoiceContribute({getAccessToken}: {getAccessToken: () => Promise
     return (
       <div className="mt-8 space-y-6">
         <Alert tone="success">
-          Received — thank you. An editor reads every story before it appears on the site.
+          Received — thank you. It is waiting in Review until someone approves it for the public
+          archive.
         </Alert>
         <div className="flex flex-wrap gap-3">
-          <ButtonLink href="/stories" variant="primary">
+          <ButtonLink href="/review" variant="primary">
+            Open review queue
+          </ButtonLink>
+          <ButtonLink href="/stories" variant="secondary">
             Read other stories
           </ButtonLink>
-          <Button variant="secondary" onClick={startAnother}>
+          <Button variant="ghost" onClick={startAnother}>
             Tell another story
           </Button>
         </div>

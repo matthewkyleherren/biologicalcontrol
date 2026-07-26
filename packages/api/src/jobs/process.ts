@@ -174,6 +174,11 @@ async function processPublishStory(
   })
   if (!draft) throw new Error(`Voice story draft not found: ${subjectId}`)
 
+  // Idempotent: never create a second Sanity doc for the same draft.
+  if (draft.sanityStoryId) {
+    return {sanityStoryId: draft.sanityStoryId, alreadyPublished: true}
+  }
+
   const body = draft.transcriptEdited || draft.transcriptRaw
   if (!body) throw new Error('Voice story draft has no transcript to publish')
 
@@ -186,7 +191,11 @@ async function processPublishStory(
     _key: id.slice(0, 12),
   }))
 
+  // Predetermine the document id so retries cannot spawn duplicates even if
+  // the mutate response is lost.
+  const predeterminedId = `community.${draft.id.replace(/-/g, '').slice(0, 22)}`
   const doc = {
+    _id: predeterminedId,
     _type: 'story',
     title,
     slug: {_type: 'slug', current: slug},
@@ -197,9 +206,10 @@ async function processPublishStory(
     body: portableTextFromPlainText(body),
     publishedAt: new Date().toISOString(),
     era: 'community-submission',
+    reviewStatus: 'pending',
   }
 
-  const result = await sanityMutate(env, [{create: doc}])
+  const result = await sanityMutate(env, [{createOrReplace: doc}])
   if (!result.ok) {
     if (result.reason === 'unconfigured') {
       throw new Error('Sanity write API is not configured')
@@ -207,19 +217,18 @@ async function processPublishStory(
     throw new Error(`Sanity story create failed (${result.status})`)
   }
 
-  const sanityStoryId = result.data.results?.[0]?.id
-  if (!sanityStoryId) throw new Error('Sanity story create returned no document id')
+  const sanityStoryId = result.data.results?.[0]?.id || predeterminedId
 
   await db
     .update(voiceStoryDrafts)
     .set({
-      status: 'published',
+      status: 'submitted',
       sanityStoryId,
       updatedAt: new Date(),
     })
     .where(eq(voiceStoryDrafts.id, draft.id))
 
-  return {sanityStoryId}
+  return {sanityStoryId, reviewStatus: 'pending'}
 }
 
 async function processUnsupported(type: string): Promise<ProcessResult> {

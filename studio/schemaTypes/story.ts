@@ -104,6 +104,22 @@ export const story = defineType({
       initialValue: false,
     }),
     defineField({
+      name: 'reviewStatus',
+      title: 'Review status',
+      type: 'string',
+      description:
+        'Community submissions start as Pending. Only Approved stories appear on the public site.',
+      options: {
+        list: [
+          {title: 'Approved — public', value: 'approved'},
+          {title: 'Pending review', value: 'pending'},
+          {title: 'Rejected', value: 'rejected'},
+        ],
+        layout: 'radio',
+      },
+      initialValue: 'approved',
+    }),
+    defineField({
       name: 'publishedAt',
       type: 'datetime',
       initialValue: () => new Date().toISOString(),

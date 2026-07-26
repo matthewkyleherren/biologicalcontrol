@@ -1,33 +1,43 @@
 import {defineQuery} from 'next-sanity'
 
+/** Public archive: approved stories, or legacy docs with no reviewStatus set. */
+const PUBLIC_STORY = `(_type == "story" && (!defined(reviewStatus) || reviewStatus == "approved"))`
+
 export const SETTINGS_QUERY = defineQuery(`*[_type == "siteSettings"][0]{
   siteTitle, tagline, domain, intro
 }`)
 
-export const FEATURED_STORIES_QUERY = defineQuery(`*[_type == "story" && featured == true] | order(year asc)[0...4]{
+export const FEATURED_STORIES_QUERY = defineQuery(`*[${PUBLIC_STORY} && featured == true] | order(year asc)[0...4]{
   _id, title, "slug": slug.current, excerpt, year, location,
   "narrator": narrator->{name, "slug": slug.current}
 }`)
 
-export const LATEST_STORIES_QUERY = defineQuery(`*[_type == "story"] | order(publishedAt desc)[0...8]{
+export const LATEST_STORIES_QUERY = defineQuery(`*[${PUBLIC_STORY}] | order(publishedAt desc)[0...8]{
   _id, title, "slug": slug.current, excerpt, year, location, era,
   "narrator": narrator->{name, "slug": slug.current, portrait},
   mainImage
 }`)
 
-export const ALL_STORIES_QUERY = defineQuery(`*[_type == "story"] | order(year asc){
+export const ALL_STORIES_QUERY = defineQuery(`*[${PUBLIC_STORY}] | order(year asc){
   _id, title, "slug": slug.current, excerpt, year, location, era,
   "narrator": narrator->{name, "slug": slug.current, portrait},
   "people": people[]->{name, "slug": slug.current},
   mainImage
 }`)
 
-export const STORY_QUERY = defineQuery(`*[_type == "story" && slug.current == $slug][0]{
+export const STORY_QUERY = defineQuery(`*[${PUBLIC_STORY} && slug.current == $slug][0]{
   _id, title, "slug": slug.current, excerpt, year, location, era, body, publishedAt,
   mainImage,
   "narrator": narrator->{name, "slug": slug.current, role, portrait},
   "people": people[]->{name, "slug": slug.current, role, portrait},
   "themes": themes[]->{title, "slug": slug.current}
+}`)
+
+export const PENDING_STORIES_QUERY = defineQuery(`*[_type == "story" && reviewStatus == "pending"] | order(_createdAt desc){
+  _id, title, "slug": slug.current, excerpt, year, location, era, reviewStatus,
+  "createdAt": _createdAt,
+  "narrator": narrator->{name, "slug": slug.current},
+  "people": people[]->{name, "slug": slug.current}
 }`)
 
 export const PEOPLE_QUERY = defineQuery(`*[_type == "person"] | order(name asc){
@@ -40,7 +50,7 @@ export const FEATURED_PEOPLE_QUERY = defineQuery(`*[_type == "person" && feature
 
 export const PERSON_QUERY = defineQuery(`*[_type == "person" && slug.current == $slug][0]{
   _id, name, "slug": slug.current, role, yearsActive, location, portrait, bio,
-  "stories": *[_type == "story" && references(^._id)] | order(year asc){
+  "stories": *[${PUBLIC_STORY} && references(^._id)] | order(year asc){
     _id, title, "slug": slug.current, excerpt, year
   },
   "galleries": *[_type == "gallery" && references(^._id)] | order(year asc){
@@ -68,7 +78,7 @@ export const PROGRAMME_QUERY = defineQuery(`*[_type == "programme"][0]{
 }`)
 
 export const HOME_COUNTS_QUERY = defineQuery(`{
-  "stories": count(*[_type == "story"]),
+  "stories": count(*[${PUBLIC_STORY}]),
   "people": count(*[_type == "person"]),
   "galleries": count(*[_type == "gallery"])
 }`)
