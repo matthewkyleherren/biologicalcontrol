@@ -30,7 +30,13 @@ type StoryReaderProps = {
 
 function groupStoriesByDecade(stories: StoryTocItem[]) {
   const groups = new Map<string, StoryTocItem[]>()
-  for (const story of stories) {
+  const sorted = [...stories].sort((a, b) => {
+    const ay = typeof a.year === 'number' ? a.year : Number.POSITIVE_INFINITY
+    const by = typeof b.year === 'number' ? b.year : Number.POSITIVE_INFINITY
+    if (ay !== by) return ay - by
+    return a.title.localeCompare(b.title)
+  })
+  for (const story of sorted) {
     const year = story.year
     const label =
       typeof year === 'number' && Number.isFinite(year)

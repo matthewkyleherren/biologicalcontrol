@@ -10,7 +10,9 @@ function blockText(value: PortableTextBlock | undefined): string {
 }
 
 function headingId(value: PortableTextBlock | undefined, fallback: string): string {
-  if (value?._key) return `h-${value._key}`
+  if (value?._key) {
+    return value._key.startsWith('h-') ? value._key : `h-${value._key}`
+  }
   const text = blockText(value)
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')

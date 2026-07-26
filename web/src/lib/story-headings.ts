@@ -25,6 +25,11 @@ function slugify(text: string, index: number): string {
   return base ? `h-${base}` : `h-${index + 1}`
 }
 
+function headingIdFromKey(key: string | undefined, text: string, index: number): string {
+  if (!key) return slugify(text, index)
+  return key.startsWith('h-') ? key : `h-${key}`
+}
+
 export function extractHeadings(value: unknown): StoryHeading[] {
   if (!Array.isArray(value)) return []
   const headings: StoryHeading[] = []
@@ -36,7 +41,7 @@ export function extractHeadings(value: unknown): StoryHeading[] {
     if (style !== 'h2' && style !== 'h3' && style !== 'h4') return
     const text = (block.children || []).map((c) => c?.text || '').join('').trim()
     if (!text) return
-    let id = block._key ? `h-${block._key}` : slugify(text, index)
+    let id = headingIdFromKey(block._key, text, index)
     if (used.has(id)) id = `${id}-${index}`
     used.add(id)
     headings.push({
