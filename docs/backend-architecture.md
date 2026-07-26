@@ -403,9 +403,11 @@ Worker: Inngest step → POST Topaz async → poll → PUT derivative to R2 → 
 
 ## 8. Voice storytelling (elderly-first)
 
+> **Product evolution:** the long-term contribute experience is a conversational **voice story agent** (orb interviewer → metadata → “tell me the story” → clarity edit → human OK). See **[voice-story-agent-spec.md](./voice-story-agent-spec.md)** for the full product/tech plan. This section remains the **reliable floor**: tap-to-record → ASR → review → publish, which the agent path reuses for draft storage and Sanity publish.
+
 ### UX (web + iOS + Android)
 
-1. Huge **Hold / Tap to record** control; someone can help on the same phone.
+1. Huge **Hold / Tap to record** control; someone can help on the same phone. (Agent orb is specified separately.)
 2. States: **Idle → Listening (recording) → Processing → Review → Submitted**.
 3. Review screen: editable transcript (large type), title, people tags, toggle **“Also publish my voice”**, language confirm.
 4. No publish without explicit **Approve & submit**.
@@ -487,6 +489,7 @@ Record on device
 - Record UI (web + mobile), R2/GCS audio, Deepgram/Whisper job, review/edit/approve, editor publish to Sanity.
 - EN + FR language hint; simple consent copy.
 - Same-device helper affordances (big buttons, clear states).
+- Then: conversational voice agent on `/contribute` per [voice-story-agent-spec.md](./voice-story-agent-spec.md) (structured interview → clarity edit → same review/publish path).
 
 ### Phase 4 — Bulk photos
 
