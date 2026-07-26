@@ -2,7 +2,7 @@ import {eq} from 'drizzle-orm'
 import {Hono} from 'hono'
 import type {Database} from '@biologicalcontrol/db'
 import {personClaims, profiles, users} from '@biologicalcontrol/db'
-import {updateProfileBodySchema} from '@biologicalcontrol/shared'
+import {updateProfileBodySchema, updateVoiceConsentBodySchema} from '@biologicalcontrol/shared'
 import type {AppEnv} from '../middleware/auth'
 import {requireAuth} from '../middleware/auth'
 import {ensureAppUser} from '../services/users'
@@ -90,6 +90,30 @@ export function meRoutes(db: Database | null) {
     }
 
     return c.json({ok: true})
+  })
+
+  app.patch('/me/consent', async (c) => {
+    const auth = requireAuth(c)
+    if (!auth) return c.json({error: 'Sign in required'}, 401)
+    if (!db) return c.json({error: 'Database not configured'}, 503)
+
+    const body = updateVoiceConsentBodySchema.parse(await c.req.json())
+    const user = await ensureAppUser(db, auth)
+    const now = new Date()
+
+    const [updated] = await db
+      .update(users)
+      .set({
+        voiceConsentAt: body.voiceConsent ? now : null,
+        updatedAt: now,
+      })
+      .where(eq(users.id, user.id))
+      .returning()
+
+    return c.json({
+      ok: true,
+      voiceConsentAt: updated?.voiceConsentAt?.toISOString() ?? null,
+    })
   })
 
   return app

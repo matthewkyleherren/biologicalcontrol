@@ -14,7 +14,7 @@ export default function SignUpPage() {
         routing="path"
         path="/sign-up"
         signInUrl="/sign-in"
-        forceRedirectUrl="/"
+        forceRedirectUrl="/me?consent=1"
         appearance={authAppearance}
       />
     </AuthShell>

@@ -1,14 +1,16 @@
 'use client'
 
 import {useCallback, useEffect, useState} from 'react'
+import {useRouter} from 'next/navigation'
 import {apiFetch} from '@/lib/api'
+import type {MeResponse} from '@biologicalcontrol/shared'
+import {voiceConsentHref, isVoiceConsentRequiredError} from '@/lib/consent'
 import {Alert, Button, ButtonLink} from '@/components/ui'
-import {VoiceConsent} from './VoiceConsent'
 import {VoiceOrb} from './VoiceOrb'
 import {VoiceRecorder} from './VoiceRecorder'
 import {VoiceReview, type VoiceDraft} from './VoiceReview'
 
-type Flow = 'orb' | 'record' | 'polling' | 'review' | 'submitted'
+type Flow = 'checking' | 'orb' | 'record' | 'polling' | 'review' | 'submitted'
 
 function errorMessage(err: unknown, fallback: string) {
   if (err instanceof Error && err.message) return err.message
@@ -20,11 +22,34 @@ function readyForReview(draft: VoiceDraft) {
 }
 
 export function VoiceContribute({getAccessToken}: {getAccessToken: () => Promise<string | null>}) {
-  const [consent, setConsent] = useState(false)
-  const [flow, setFlow] = useState<Flow>('orb')
+  const router = useRouter()
+  const [flow, setFlow] = useState<Flow>('checking')
   const [draftId, setDraftId] = useState<string | null>(null)
   const [draft, setDraft] = useState<VoiceDraft | null>(null)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    let cancelled = false
+    async function gate() {
+      try {
+        const me = await apiFetch<MeResponse>('/me', {getAccessToken})
+        if (cancelled) return
+        if (!me.voiceConsentAt) {
+          router.replace(voiceConsentHref('/contribute'))
+          return
+        }
+        setFlow('orb')
+      } catch (err) {
+        if (cancelled) return
+        setError(errorMessage(err, 'Could not check your profile.'))
+        setFlow('orb')
+      }
+    }
+    void gate()
+    return () => {
+      cancelled = true
+    }
+  }, [getAccessToken, router])
 
   const pollDraft = useCallback(
     async (id: string) => {
@@ -34,7 +59,9 @@ export function VoiceContribute({getAccessToken}: {getAccessToken: () => Promise
         setFlow('review')
       } else if (data.draft.transcriptStatus === 'failed' || data.draft.status === 'rejected') {
         setFlow('record')
-        setError('The recording was saved, but it could not be written down. Please record it again or write it.')
+        setError(
+          'The recording was saved, but it could not be written down. Please record it again or write it.'
+        )
       }
     },
     [getAccessToken]
@@ -50,7 +77,13 @@ export function VoiceContribute({getAccessToken}: {getAccessToken: () => Promise
         await pollDraft(draftId)
       } catch (err) {
         if (!cancelled) {
-          setError(errorMessage(err, 'The draft could not be checked. Keep this page open and try again.'))
+          if (isVoiceConsentRequiredError(err)) {
+            router.replace(voiceConsentHref('/contribute'))
+            return
+          }
+          setError(
+            errorMessage(err, 'The draft could not be checked. Keep this page open and try again.')
+          )
         }
       }
     }
@@ -61,7 +94,7 @@ export function VoiceContribute({getAccessToken}: {getAccessToken: () => Promise
       cancelled = true
       window.clearInterval(interval)
     }
-  }, [draftId, flow, pollDraft])
+  }, [draftId, flow, pollDraft, router])
 
   const handleDraftCreated = useCallback((nextDraft: VoiceDraft) => {
     setDraft(nextDraft)
@@ -75,12 +108,17 @@ export function VoiceContribute({getAccessToken}: {getAccessToken: () => Promise
       setDraftId(id)
       setError('')
       setFlow('polling')
-      // Orb direct-transcribe drafts are often already ready — check immediately.
       void pollDraft(id).catch((err) => {
-        setError(errorMessage(err, 'The draft could not be checked. Keep this page open and try again.'))
+        if (isVoiceConsentRequiredError(err)) {
+          router.replace(voiceConsentHref('/contribute'))
+          return
+        }
+        setError(
+          errorMessage(err, 'The draft could not be checked. Keep this page open and try again.')
+        )
       })
     },
-    [pollDraft]
+    [pollDraft, router]
   )
 
   function retell() {
@@ -97,19 +135,28 @@ export function VoiceContribute({getAccessToken}: {getAccessToken: () => Promise
     setFlow('orb')
   }
 
+  if (flow === 'checking') {
+    return (
+      <div className="mt-8 space-y-3" aria-live="polite" aria-busy="true">
+        <div className="skeleton h-12 w-full" />
+        <div className="skeleton h-32 w-full" />
+      </div>
+    )
+  }
+
   if (flow === 'submitted') {
     return (
       <div className="mt-8 space-y-6">
         <Alert tone="success">
-          Received — thank you. It is waiting in Review until someone approves it for the public
+          Received — thank you. It is waiting for review until someone approves it for the public
           archive.
         </Alert>
         <div className="flex flex-wrap gap-3">
-          <ButtonLink href="/review" variant="primary">
-            Open review queue
-          </ButtonLink>
-          <ButtonLink href="/stories" variant="secondary">
+          <ButtonLink href="/stories" variant="primary">
             Read other stories
+          </ButtonLink>
+          <ButtonLink href="/me" variant="secondary">
+            Your profile
           </ButtonLink>
           <Button variant="ghost" onClick={startAnother}>
             Tell another story
@@ -155,20 +202,22 @@ export function VoiceContribute({getAccessToken}: {getAccessToken: () => Promise
 
   return (
     <div className="mt-8 space-y-6">
-      <VoiceConsent checked={consent} onCheckedChange={setConsent} />
-
       {error ? <Alert tone="error">{error}</Alert> : null}
 
       {flow === 'record' ? (
         <div className="space-y-5">
-          <VoiceRecorder consent={consent} getAccessToken={getAccessToken} onDraftCreated={handleDraftCreated} />
+          <VoiceRecorder
+            consent
+            getAccessToken={getAccessToken}
+            onDraftCreated={handleDraftCreated}
+          />
           <Button variant="ghost" onClick={() => setFlow('orb')}>
             Try the interviewer
           </Button>
         </div>
       ) : (
         <VoiceOrb
-          consent={consent}
+          consent
           getAccessToken={getAccessToken}
           onDraftId={handleDraftId}
           onRecordInstead={() => {

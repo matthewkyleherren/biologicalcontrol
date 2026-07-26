@@ -19,6 +19,7 @@ import {
   type TabItem,
 } from '@/components/ui'
 import {ProfileHeader, ProfileHeaderSkeleton} from '@/components/profile/ProfileHeader'
+import {VoiceConsentCard} from '@/components/profile/VoiceConsentCard'
 import {rosterFacts, type RosterPerson} from '@/components/profile/roster'
 
 type ClaimRow = {
@@ -41,6 +42,18 @@ const ROLE_LABEL: Record<string, string> = {
   admin: 'Administrator',
 }
 
+function readConsentQuery() {
+  if (typeof window === 'undefined') {
+    return {autoOffer: false, nextPath: null as string | null}
+  }
+  const params = new URLSearchParams(window.location.search)
+  const next = params.get('next')
+  return {
+    autoOffer: params.get('consent') === '1',
+    nextPath: next && next.startsWith('/') && !next.startsWith('//') ? next : null,
+  }
+}
+
 export function MeClient({roster}: {roster: RosterPerson[]}) {
   const {getToken, isLoaded} = useAuth()
   const {user} = useUser()
@@ -49,8 +62,13 @@ export function MeClient({roster}: {roster: RosterPerson[]}) {
   const [failed, setFailed] = useState(false)
   const [reloading, setReloading] = useState(false)
   const [tab, setTab] = useState<TabId>('stories')
+  const [consentQuery, setConsentQuery] = useState({autoOffer: false, nextPath: null as string | null})
 
   const tokenFn = useCallback(() => getToken(), [getToken])
+
+  useEffect(() => {
+    setConsentQuery(readConsentQuery())
+  }, [])
 
   const load = useCallback(async () => {
     try {
@@ -154,6 +172,14 @@ export function MeClient({roster}: {roster: RosterPerson[]}) {
             </ButtonLink>
           </>
         }
+      />
+
+      <VoiceConsentCard
+        voiceConsentAt={me.voiceConsentAt}
+        getAccessToken={tokenFn}
+        autoOffer={consentQuery.autoOffer || (!me.voiceConsentAt && Boolean(consentQuery.nextPath))}
+        nextPath={consentQuery.nextPath}
+        onChanged={(voiceConsentAt) => setMe((prev) => (prev ? {...prev, voiceConsentAt} : prev))}
       />
 
       {approvedPerson ? (

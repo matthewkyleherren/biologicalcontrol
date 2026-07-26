@@ -81,6 +81,15 @@ export function voiceAgentRoutes(db: Database | null) {
 
     const body = createVoiceAgentSessionBodySchema.parse(await c.req.json());
     const user = await ensureAppUser(db, auth);
+    if (!user.voiceConsentAt) {
+      return c.json(
+        {
+          error: 'Voice consent required',
+          code: 'VOICE_CONSENT_REQUIRED',
+        },
+        403
+      );
+    }
     const env = c.get('env');
 
     let session: VoiceAgentSessionRow;
@@ -93,15 +102,14 @@ export function voiceAgentRoutes(db: Database | null) {
       statusCode = 200;
     } else {
       const languageHint = body.languageHint ?? user.locale ?? 'auto';
-      const consentRecordedAt = user.voiceConsentAt ?? null;
       const [created] = await db
         .insert(voiceAgentSessions)
         .values({
           userId: user.id,
           status: 'active',
-          stage: consentRecordedAt ? 'greeting' : 'consent',
+          stage: 'greeting',
           languageHint,
-          consentRecordedAt,
+          consentRecordedAt: user.voiceConsentAt,
         })
         .returning();
 
