@@ -119,9 +119,20 @@ export const users = pgTable(
     locale: localeEnum('locale').notNull().default('en'),
     faceConsentAt: timestamp('face_consent_at', {withTimezone: true}),
     voiceConsentAt: timestamp('voice_consent_at', {withTimezone: true}),
+    lastSeenAt: timestamp('last_seen_at', {withTimezone: true}),
     ...timestamps,
   }
 )
+
+/** Lightweight product analytics — page views and sign-in pings. */
+export const siteEvents = pgTable('site_events', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  type: varchar('type', {length: 32}).notNull(),
+  path: varchar('path', {length: 500}),
+  userId: uuid('user_id').references(() => users.id, {onDelete: 'set null'}),
+  meta: jsonb('meta').$type<Record<string, unknown>>(),
+  createdAt: timestamp('created_at', {withTimezone: true}).defaultNow().notNull(),
+})
 
 export const profiles = pgTable('profiles', {
   userId: uuid('user_id')

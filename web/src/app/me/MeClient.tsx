@@ -141,6 +141,11 @@ export function MeClient({roster}: {roster: RosterPerson[]}) {
         }
         actions={
           <>
+            {me.role === 'admin' ? (
+              <ButtonLink href="/admin" variant="secondary" icon="check">
+                Admin
+              </ButtonLink>
+            ) : null}
             <ButtonLink href="/settings" variant="secondary" icon="edit">
               Edit profile
             </ButtonLink>

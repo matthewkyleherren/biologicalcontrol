@@ -16,6 +16,7 @@ import {uploadsRoutes} from './routes/uploads'
 import {webhooksRoutes} from './routes/webhooks'
 import {storiesRoutes} from './routes/stories'
 import {voiceAgentRoutes} from './routes/voice-agent'
+import {adminRoutes} from './routes/admin'
 
 export type CreateApiOptions = {
   env: ApiEnv
@@ -53,6 +54,7 @@ export function createApi(options: CreateApiOptions) {
   app.route('/', chatRoutes(db))
   app.route('/', uploadsRoutes())
   app.route('/', storiesRoutes(db))
+  app.route('/', adminRoutes(db))
   app.route('/', webhooksRoutes(db))
 
   app.notFound((c) => c.json({error: 'Not found'}, 404))
