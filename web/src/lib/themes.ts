@@ -1,32 +1,9 @@
-export type ThemeId = 'default' | 'typewriter' | 'retro94'
+/**
+ * Theme helpers retained only so a one-time cleanup can clear leftover joke-theme
+ * keys from browsers that still have `bc-theme` in localStorage.
+ */
 
 export const THEME_STORAGE_KEY = 'bc-theme'
 
-export const THEME_OPTIONS: {
-  id: ThemeId
-  label: string
-  description: string
-}[] = [
-  {
-    id: 'default',
-    label: 'Default',
-    description: 'Modern Cursor-beige — clean and readable',
-  },
-  {
-    id: 'typewriter',
-    label: 'Typewriter',
-    description: 'Monospace on typing paper, ASCII card frames',
-  },
-  {
-    id: 'retro94',
-    label: '1994',
-    description: 'God-awful early-web parody (still navigable)',
-  },
-]
-
-export function isThemeId(value: string | null | undefined): value is ThemeId {
-  return value === 'default' || value === 'typewriter' || value === 'retro94'
-}
-
-/** Inline script: apply stored theme before paint to avoid flash. */
-export const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('${THEME_STORAGE_KEY}');if(t!=='typewriter'&&t!=='retro94')t='default';document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','default');}})();`
+/** Clears obsolete theme preference before paint. Safe no-op when storage is blocked. */
+export const THEME_CLEANUP_SCRIPT = `(function(){try{localStorage.removeItem('${THEME_STORAGE_KEY}');}catch(e){}})();document.documentElement.removeAttribute('data-theme');`

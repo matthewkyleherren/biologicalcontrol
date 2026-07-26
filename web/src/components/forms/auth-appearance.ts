@@ -12,14 +12,15 @@ import type {SignIn} from '@clerk/nextjs'
 export const authAppearance: NonNullable<ComponentProps<typeof SignIn>['appearance']> = {
   elements: {
     rootBox: 'w-full',
-    card: 'shadow-none border border-rule bg-paper',
-    headerTitle: 'text-2xl text-ink',
-    headerSubtitle: 'text-lg text-ink-soft',
-    formButtonPrimary: 'min-h-12 bg-ink text-paper text-lg hover:opacity-90',
-    formFieldInput: 'min-h-12 text-lg border-rule text-ink',
-    formFieldLabel: 'text-base text-ink',
+    card: 'shadow-none rounded-sm border border-rule bg-surface',
+    headerTitle: 'font-serif text-2xl font-normal tracking-tight text-ink',
+    headerSubtitle: 'text-base text-ink-soft',
+    formButtonPrimary:
+      'min-h-12 rounded-sm bg-ink font-mono text-xs uppercase tracking-[0.08em] text-white hover:bg-accent',
+    formFieldInput: 'min-h-12 rounded-sm text-lg border-rule text-ink',
+    formFieldLabel: 'font-mono text-xs uppercase tracking-[0.08em] text-ink',
     footerActionLink: 'text-base text-accent',
     identityPreviewText: 'text-base text-ink',
-    otpCodeFieldInput: 'min-h-12 min-w-10 text-xl border-rule text-ink',
+    otpCodeFieldInput: 'min-h-12 min-w-10 rounded-sm text-xl border-rule text-ink',
   },
 }

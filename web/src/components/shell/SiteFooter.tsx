@@ -10,8 +10,7 @@ const LINKS = [
 ]
 
 /**
- * Quiet, single band. No link columns, no visitor counter, no theme switcher —
- * appearance settings moved to /settings where settings belong.
+ * Quiet, single band. No link columns — settings live at /settings.
  */
 export function SiteFooter() {
   const pathname = usePathname()

@@ -129,12 +129,14 @@ as labels.
 
 ## Design system
 
-The visual identity is **locked and unchanged**: warm paper `#f7f7f4`, near-black ink
-`#26251e`, leaf accent `#3d5c45`, Geist Sans and Geist Mono. Do not introduce new colours,
-new fonts, gradients, glassmorphism, or shadow-heavy cards.
+The visual identity matches the story reader (Making Software–inspired): cool gray paper
+`#f5f5f5`, black ink, cobalt accent `#103cfe`, sky underline `#00bbfe`, Newsreader for
+display and long-form, Geist Sans for UI chrome, Geist Mono for rails and meta. Sharp
+radii (`0.125–0.5rem`). Do not reintroduce warm beige, leaf green, joke themes, or
+shadow-heavy cards.
 
-What gets added is a component layer. Build these in `web/src/components/ui/` and use them
-everywhere — no more one-off Tailwind chains per page:
+Build shared pieces in `web/src/components/ui/` and use them everywhere — no more one-off
+Tailwind chains per page:
 
 `Avatar` (initials fallback, 5 sizes) · `Button` (primary/secondary/ghost/danger, all eight
 states) · `Field` (label, input/textarea/select, helper, error) · `SearchInput` ·
@@ -144,7 +146,7 @@ states) · `Field` (label, input/textarea/select, helper, error) · `SearchInput
 
 Rules that hold everywhere:
 
-- Tap targets ≥ 44px; body text ≥ 17px; never below 15px for anything a person must read.
+- Tap targets ≥ 44px; UI body text ≥ 16px; story prose follows the reader measure.
 - Every colour and font references a token. No inline hex, no bare `font-family`.
 - All eight interactive states are implemented: default, hover, focus-visible, active,
   disabled, loading, error, success. Focus rings appear instantly and are never animated.
@@ -187,10 +189,8 @@ shipped — they are things the data or the CSS cannot currently support.
 5. **No message pagination.** Threads hard-cap at the most recent 100 messages with no
    cursor. Fine now; not fine after a few years of use.
 
-## Joke themes
+## Appearance
 
-`typewriter` and `1994` stay as an opt-in easter egg in Settings, but all joke markup is
-removed from `SiteHeader` and `SiteFooter` — the marquee, the File/Edit/View toolbar, the
-"Under Construction" line, and the visitor counter. Those move into `themes.css` as
-generated content on `[data-theme='retro94']` so the default site's DOM is clean. The theme
-switcher moves out of the header gear into `/settings`.
+Joke themes (`typewriter`, `1994`) were removed. The site has one visual system — the
+Making Software–inspired reader look — applied everywhere. Leftover `bc-theme` keys in
+localStorage are cleared on load.

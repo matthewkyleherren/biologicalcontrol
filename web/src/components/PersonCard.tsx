@@ -28,7 +28,7 @@ export function PersonCard({name, slug, role, yearsActive, location, portrait}: 
       <div className="flex items-center gap-3">
         <Avatar name={name} src={imageUrl} size="lg" />
         <div className="min-w-0 flex-1">
-          <p className="text-lg leading-tight font-semibold text-ink [overflow-wrap:anywhere] group-hover:text-accent">
+          <p className="text-lg leading-tight font-[family-name:var(--font-display)] font-normal text-ink/80 [overflow-wrap:anywhere] group-hover:text-accent">
             {name}
           </p>
           {role ? <p className="truncate-1 mt-0.5 text-base text-ink-soft">{role}</p> : null}

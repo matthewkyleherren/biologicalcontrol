@@ -1,6 +1,7 @@
 # biologicalcontrol.org — design system
 
 Locked visual system for the IITA Biological Control folklore archive.
+Adapted from the story reader (Making Software–inspired).
 
 ## Two layers
 
@@ -22,7 +23,8 @@ build it there rather than inventing a one-off.
 
 - **Domain:** biologicalcontrol.org
 - **Concept:** folklore archive for everyone who was there — one community, shared compound life
-- **Identity:** sharp Geist sans, warm beige paper, high contrast
+- **Identity:** Newsreader for display and long-form, Geist Sans for UI, Geist Mono for rails —
+  cool gray paper, black ink, cobalt accent
 - **Audience:** colleagues in their 60s–80s, mostly on phones — familiarity beats novelty
 
 ## Structure
@@ -31,31 +33,33 @@ build it there rather than inventing a one-off.
   tab bar with icons *and* permanent labels on mobile. Five destinations, never six.
 - **Footer:** single quiet band, hidden on messaging.
 - **Home:** Ecosystem Index — invitation, then what is new (stories, photographs, people).
-- **Story pages:** Long Document in Geist Sans, 45–75ch measure, no drop cap.
-- **Person cards:** a restrained nod to IITA-era stationery — hairline rules and mono meta.
-  No invented inventory codes, no placeholder stations: missing data is omitted, not filled.
-- **Joke themes** (Typewriter / 1994): opt-in from Settings only. Their markup lives in
-  `ThemeChrome.tsx` and renders only when the theme is switched on — never in the default DOM.
+- **Story pages:** book reader — Newsreader prose, paper sheet on gray, reading ruler, TOC drawer.
+- **Person cards:** restrained — hairline rules and mono meta. Missing data is omitted, not filled.
 
 ## Tokens
 
 | Token | Value |
 | --- | --- |
-| `--color-paper` / `-2` / `-3` | `#f7f7f4` · `#efeee9` · `#e6e5df` |
-| `--color-ink` / `-soft` / `-faint` | `#26251e` · `#4a4840` · `#6e6b62` |
-| `--color-rule` | `#d9d7ce` |
-| `--color-accent` | leaf `#3d5c45` — quiet links and unread marks; ink for primary actions |
+| `--color-paper` / `-2` / `-3` | `#f5f5f5` · `#fbfbfb` · `#eeeeee` |
+| `--color-surface` | `#ffffff` — raised paper sheets |
+| `--color-ink` / `-soft` / `-faint` | `#000000` · `#374151` · `color-mix(#000 50%)` |
+| `--color-rule` | `color-mix(#000 10%)` |
+| `--color-accent` | cobalt `#103cfe` — links, focus, unread |
+| `--color-sky` | `#00bbfe` — prose link underlines |
 | `--color-danger` | `#8f2d20` |
-| `--font-*` | Geist Sans everywhere; Geist Mono for rails, meta, timestamps and counts |
-| `--radius-sm/md/lg` | `0.375rem` · `0.625rem` · `1rem` |
+| `--font-display` / body editorial | Newsreader |
+| `--font-ui` | Geist Sans |
+| `--font-mono` | Geist Mono — rails, meta, timestamps, counts |
+| `--radius-sm/md/lg` | `0.125rem` · `0.25rem` · `0.5rem` |
 | `--dur-fast/base/slow` | `120ms` · `180ms` · `240ms` |
 
 ## Type rules
 
-- Sans-only · bold display · tight tracking · body ≥ 17px, never below 15px
-- Headings always roman — no italic headings, no italic emphasis inside one
-- Solid ink primary buttons · outlined secondary · no purple, no serif magazine vibe
+- Display and story prose in Newsreader · UI chrome in Geist Sans · mono for meta only
+- Headings roman — no italic headings
+- Solid ink primary buttons · outlined secondary · cobalt for links and focus
 - Mono is an outlier register: labels, dates, counts. Never body copy.
+- Body UI ≥ 16px; story prose follows the reader measure (~15px justified on desktop)
 
 ## Interaction rules
 

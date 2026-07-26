@@ -1,16 +1,13 @@
 import type {Metadata, Viewport} from 'next'
-import {Geist, Geist_Mono} from 'next/font/google'
+import {Geist, Geist_Mono, Newsreader} from 'next/font/google'
 import {ClerkProvider} from '@clerk/nextjs'
 import {Analytics} from '@vercel/analytics/next'
 import {SiteHeader} from '@/components/shell/SiteHeader'
 import {SiteFooter} from '@/components/shell/SiteFooter'
 import {BottomTabs} from '@/components/shell/BottomTabs'
 import {UnreadProvider} from '@/components/shell/UnreadProvider'
-import {ThemeProvider} from '@/components/ThemeProvider'
-import {ThemeChrome} from '@/components/ThemeChrome'
-import {THEME_INIT_SCRIPT} from '@/lib/themes'
+import {THEME_CLEANUP_SCRIPT} from '@/lib/themes'
 import './globals.css'
-import './themes.css'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -20,6 +17,12 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: '--font-geist-mono',
   subsets: ['latin'],
+})
+
+const newsreader = Newsreader({
+  subsets: ['latin'],
+  variable: '--font-story-serif',
+  display: 'swap',
 })
 
 export const metadata: Metadata = {
@@ -37,7 +40,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  themeColor: '#f7f7f4',
+  themeColor: '#f5f5f5',
 }
 
 export default function RootLayout({
@@ -49,27 +52,22 @@ export default function RootLayout({
     <ClerkProvider>
       <html
         lang="en"
-        data-theme="default"
         suppressHydrationWarning
-        className={`${geistSans.variable} ${geistMono.variable} h-full`}
+        className={`${geistSans.variable} ${geistMono.variable} ${newsreader.variable} h-full`}
       >
         <body className="flex min-h-full flex-col bg-paper text-ink antialiased">
-          <script dangerouslySetInnerHTML={{__html: THEME_INIT_SCRIPT}} />
+          <script dangerouslySetInnerHTML={{__html: THEME_CLEANUP_SCRIPT}} />
           <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:z-[100] focus:m-2 focus:rounded focus:bg-ink focus:px-4 focus:py-2 focus:text-paper">
             Skip to content
           </a>
-          <ThemeProvider>
-            <UnreadProvider>
-              <ThemeChrome slot="top" />
-              <SiteHeader />
-              <div id="main" className="app-main has-tabbar">
-                {children}
-              </div>
-              <SiteFooter />
-              <ThemeChrome slot="bottom" />
-              <BottomTabs />
-            </UnreadProvider>
-          </ThemeProvider>
+          <UnreadProvider>
+            <SiteHeader />
+            <div id="main" className="app-main has-tabbar">
+              {children}
+            </div>
+            <SiteFooter />
+            <BottomTabs />
+          </UnreadProvider>
           <Analytics />
         </body>
       </html>

@@ -64,13 +64,13 @@ export default async function HomePage() {
               </div>
             </div>
             <div className="rise-in rise-in-delay-1 min-w-0 md:pb-2">
-              <p className="max-w-[34rem] text-lg leading-relaxed text-ink-soft md:text-xl md:leading-relaxed">
+              <p className="max-w-[34rem] font-[family-name:var(--font-body)] text-base leading-relaxed text-ink-soft md:text-lg md:leading-relaxed">
                 {intro}
               </p>
               <p className="mt-6">
                 <Link
                   href="/programme"
-                  className="text-base font-medium text-ink underline decoration-rule underline-offset-[0.18em] transition-colors hover:text-accent hover:decoration-accent"
+                  className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.08em] text-ink transition-colors hover:text-accent"
                 >
                   New here? Read the Programme intro →
                 </Link>
