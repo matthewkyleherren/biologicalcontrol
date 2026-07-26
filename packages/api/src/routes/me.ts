@@ -16,6 +16,12 @@ export function meRoutes(db: Database | null) {
     if (!db) return c.json({error: 'Database not configured'}, 503)
 
     const user = await ensureAppUser(db, auth)
+    const now = new Date()
+    await db
+      .update(users)
+      .set({lastSeenAt: now, updatedAt: now})
+      .where(eq(users.id, user.id))
+
     const profile = await db.query.profiles.findFirst({
       where: eq(profiles.userId, user.id),
     })

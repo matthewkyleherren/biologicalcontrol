@@ -1,7 +1,10 @@
 'use client'
 
-import {SignInButton, useClerk, useUser} from '@clerk/nextjs'
+import {useCallback, useEffect, useState} from 'react'
+import {SignInButton, useAuth, useClerk, useUser} from '@clerk/nextjs'
 import {useRouter} from 'next/navigation'
+import {apiFetch} from '@/lib/api'
+import type {MeResponse} from '@biologicalcontrol/shared'
 import {Avatar} from '@/components/ui/Avatar'
 import {Menu, MenuButton, MenuLink, MenuSeparator} from '@/components/ui/Menu'
 
@@ -11,8 +14,30 @@ import {Menu, MenuButton, MenuLink, MenuSeparator} from '@/components/ui/Menu'
  */
 export function AccountMenu() {
   const {user, isLoaded} = useUser()
+  const {getToken, isLoaded: authLoaded} = useAuth()
   const {signOut} = useClerk()
   const router = useRouter()
+  const [role, setRole] = useState<MeResponse['role'] | null>(null)
+
+  const tokenFn = useCallback(() => getToken(), [getToken])
+
+  useEffect(() => {
+    if (!authLoaded || !user) {
+      setRole(null)
+      return
+    }
+    let cancelled = false
+    void apiFetch<MeResponse>('/me', {getAccessToken: tokenFn})
+      .then((me) => {
+        if (!cancelled) setRole(me.role)
+      })
+      .catch(() => {
+        if (!cancelled) setRole(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [authLoaded, user, tokenFn])
 
   if (!isLoaded) {
     return <span className="skeleton block h-11 w-11 rounded-full" aria-hidden />
@@ -29,6 +54,7 @@ export function AccountMenu() {
   }
 
   const name = user.fullName || user.username || 'Your account'
+  const isAdmin = role === 'admin'
 
   return (
     <Menu
@@ -47,14 +73,16 @@ export function AccountMenu() {
       <MenuLink href="/me" icon="user">
         Your profile
       </MenuLink>
+      {isAdmin ? (
+        <MenuLink href="/admin" icon="check">
+          Admin
+        </MenuLink>
+      ) : null}
       <MenuLink href="/chat" icon="messages">
         Messages
       </MenuLink>
       <MenuLink href="/contribute" icon="compose">
         Share a story
-      </MenuLink>
-      <MenuLink href="/review" icon="check">
-        Review submissions
       </MenuLink>
       <MenuLink href="/settings" icon="settings">
         Settings

@@ -6,6 +6,7 @@ import {SiteHeader} from '@/components/shell/SiteHeader'
 import {SiteFooter} from '@/components/shell/SiteFooter'
 import {BottomTabs} from '@/components/shell/BottomTabs'
 import {UnreadProvider} from '@/components/shell/UnreadProvider'
+import {AnalyticsBeacon} from '@/components/shell/AnalyticsBeacon'
 import {THEME_CLEANUP_SCRIPT} from '@/lib/themes'
 import './globals.css'
 
@@ -67,6 +68,7 @@ export default function RootLayout({
             </div>
             <SiteFooter />
             <BottomTabs />
+            <AnalyticsBeacon />
           </UnreadProvider>
           <Analytics />
         </body>
