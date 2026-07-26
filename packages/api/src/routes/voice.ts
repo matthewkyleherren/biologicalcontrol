@@ -106,15 +106,35 @@ export function voiceRoutes(db: Database | null) {
       return c.json({error: err instanceof Error ? err.message : 'Invalid audio'}, 400)
     }
 
-    const transcription = await transcribeAudioFromUrl(
-      env.DEEPGRAM_API_KEY,
-      audioBytes,
-      body.languageHint,
-      body.contentType
-    )
+    let transcription
+    try {
+      transcription = await transcribeAudioFromUrl(
+        env.DEEPGRAM_API_KEY,
+        audioBytes,
+        body.languageHint,
+        body.contentType
+      )
+    } catch (err) {
+      console.error('[voice-drafts/direct] deepgram failed', err)
+      return c.json(
+        {
+          error:
+            err instanceof Error
+              ? err.message.slice(0, 300)
+              : 'Transcription failed. Check DEEPGRAM_API_KEY on the server.',
+        },
+        502
+      )
+    }
     const transcriptRaw = transcription.transcript.trim()
     if (!transcriptRaw) {
-      return c.json({error: 'Deepgram returned an empty transcript'}, 502)
+      return c.json(
+        {
+          error:
+            'We could not hear any words in that recording. Tap to record again, speak a little closer to the phone, then stop.',
+        },
+        422
+      )
     }
 
     const user = await ensureAppUser(db, auth)

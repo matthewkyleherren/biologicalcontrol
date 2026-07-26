@@ -191,7 +191,7 @@ export function VoiceRecorder({
       const createDirectDraft = async () => {
         if (blob.size > MAX_DIRECT_FALLBACK_BYTES) {
           throw new Error(
-            'This recording is too long to save without storage configured. Please make a shorter recording for now, or write it down.'
+            'This recording is too long to send in one go. Please make a shorter recording for now, or write it down.'
           )
         }
         setState('processing')
@@ -209,6 +209,13 @@ export function VoiceRecorder({
         onDraftCreated(data.draft)
       }
 
+      // Prefer Deepgram-direct for reliability. Production GCS upload + async
+      // transcription fails when DEEPGRAM_API_KEY is missing or schema lags.
+      if (blob.size <= MAX_DIRECT_FALLBACK_BYTES) {
+        await createDirectDraft()
+        return
+      }
+
       const signed = await apiFetch<SignedUploadResponse>('/uploads/signed-url', {
         method: 'POST',
         getAccessToken,
@@ -219,7 +226,7 @@ export function VoiceRecorder({
         },
       })
 
-      if (signed.mode === 'stub') {
+      if (signed.mode === 'stub' || isStubUploadUrl(signed.uploadUrl)) {
         await createDirectDraft()
         return
       }
@@ -231,29 +238,31 @@ export function VoiceRecorder({
           headers: signed.headers ?? {'Content-Type': contentType},
           body: blob,
         })
-      } catch (err) {
-        if (isStubUploadUrl(signed.uploadUrl)) {
-          await createDirectDraft()
-          return
-        }
-        throw err
+      } catch {
+        await createDirectDraft()
+        return
       }
       if (!upload.ok) {
-        throw new Error('The recording could not be uploaded. Check your connection and try again.')
+        await createDirectDraft()
+        return
       }
 
       setState('processing')
-      const data = await apiFetch<{draft: VoiceDraft}>('/voice-drafts', {
-        method: 'POST',
-        getAccessToken,
-        body: {
-          audioR2Key: signed.key,
-          audioDurationMs: Math.min(durationMs, MAX_DURATION_MS),
-          languageHint: 'auto',
-          voiceConsent: true,
-        },
-      })
-      onDraftCreated(data.draft)
+      try {
+        const data = await apiFetch<{draft: VoiceDraft}>('/voice-drafts', {
+          method: 'POST',
+          getAccessToken,
+          body: {
+            audioR2Key: signed.key,
+            audioDurationMs: Math.min(durationMs, MAX_DURATION_MS),
+            languageHint: 'auto',
+            voiceConsent: true,
+          },
+        })
+        onDraftCreated(data.draft)
+      } catch {
+        await createDirectDraft()
+      }
     } catch (err) {
       setState('idle')
       setError(
