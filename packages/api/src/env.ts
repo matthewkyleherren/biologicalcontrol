@@ -28,6 +28,8 @@ export type ApiEnv = {
   NEXT_PUBLIC_SANITY_DATASET?: string
   DEEPGRAM_API_KEY?: string
   OPENAI_API_KEY?: string
+  OPENROUTER_API_KEY?: string
+  OPENROUTER_MODEL?: string
   ABLY_API_KEY?: string
   RESEND_API_KEY?: string
   RESEND_EMAIL_DOMAIN?: string

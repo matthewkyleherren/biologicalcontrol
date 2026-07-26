@@ -21,6 +21,7 @@ export const JobType = z.enum([
   'face_match',
   'date_infer',
   'transcribe',
+  'clarity_edit',
   'publish_story',
 ])
 export type JobType = z.infer<typeof JobType>
@@ -75,14 +76,170 @@ export const createVoiceDraftBodySchema = z.object({
 })
 export type CreateVoiceDraftBody = z.infer<typeof createVoiceDraftBodySchema>
 
+const directVoiceDraftMaxBytes = 20 * 1024 * 1024
+const directVoiceDraftMaxBase64Length = Math.ceil(directVoiceDraftMaxBytes / 3) * 4
+
+export const createVoiceDraftDirectBodySchema = z.object({
+  audioBase64: z.string().min(1).max(directVoiceDraftMaxBase64Length),
+  contentType: z.string().min(3).max(120),
+  audioDurationMs: z.number().int().positive().max(20 * 60 * 1000),
+  languageHint: z.enum(['en', 'fr', 'auto']).default('auto'),
+  voiceConsent: z.literal(true),
+})
+export type CreateVoiceDraftDirectBody = z.infer<
+  typeof createVoiceDraftDirectBodySchema
+>
+
 export const submitVoiceDraftBodySchema = z.object({
   title: z.string().min(1).max(200),
   transcriptEdited: z.string().min(1).max(100_000),
   sanityPersonIds: z.array(z.string()).default([]),
   publishAudio: z.boolean().default(false),
   year: z.number().int().min(1975).max(2030).optional(),
+  location: z.string().max(200).optional(),
+  yearText: z.string().max(80).optional(),
 })
 export type SubmitVoiceDraftBody = z.infer<typeof submitVoiceDraftBodySchema>
+
+export const VoiceAgentSessionStatus = z.enum([
+  'idle',
+  'active',
+  'processing',
+  'review',
+  'abandoned',
+  'completed',
+])
+export type VoiceAgentSessionStatus = z.infer<typeof VoiceAgentSessionStatus>
+
+export const VoiceAgentStage = z.enum([
+  'greeting',
+  'consent',
+  'who',
+  'when',
+  'where',
+  'title',
+  'story',
+  'confirm',
+  'done',
+])
+export type VoiceAgentStage = z.infer<typeof VoiceAgentStage>
+
+export const voiceAgentMetaSchema = z.object({
+  peopleNames: z.array(z.string()).optional(),
+  peopleSanityIds: z.array(z.string()).optional(),
+  year: z.number().int().optional(),
+  yearText: z.string().max(80).optional(),
+  location: z.string().max(200).optional(),
+  title: z.string().max(200).optional(),
+})
+export type VoiceAgentMeta = z.infer<typeof voiceAgentMetaSchema>
+
+export const voiceAgentSessionSchema = z.object({
+  id: z.string().uuid(),
+  userId: z.string().uuid(),
+  draftId: z.string().uuid().nullable(),
+  status: VoiceAgentSessionStatus,
+  stage: VoiceAgentStage,
+  languageHint: z.enum(['en', 'fr', 'auto']),
+  provider: z.literal('deepgram_agent').or(z.string()),
+  providerSessionRef: z.string().nullable(),
+  metaJson: voiceAgentMetaSchema.default({}),
+  interviewAudioR2Key: z.string().nullable(),
+  storyAudioR2Key: z.string().nullable(),
+  transcriptInterview: z.string().nullable(),
+  agentSummary: z.string().nullable(),
+  consentRecordedAt: z.string().datetime().nullable(),
+  error: z.string().nullable(),
+  completedAt: z.string().datetime().nullable(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+})
+export type VoiceAgentSession = z.infer<typeof voiceAgentSessionSchema>
+
+export const createVoiceAgentSessionBodySchema = z.object({
+  languageHint: z.enum(['en', 'fr', 'auto']).optional(),
+  resumeSessionId: z.string().uuid().optional(),
+})
+export type CreateVoiceAgentSessionBody = z.infer<typeof createVoiceAgentSessionBodySchema>
+
+export const voiceAgentEventBodySchema = z.object({
+  type: z.enum(['stage', 'meta', 'user_text', 'error', 'heartbeat']),
+  payload: z
+    .object({
+      stage: VoiceAgentStage.optional(),
+      meta: voiceAgentMetaSchema.optional(),
+      text: z.string().max(20_000).optional(),
+      error: z.string().max(2000).optional(),
+      consent: z.boolean().optional(),
+      agentSummary: z.string().max(4000).optional(),
+    })
+    .default({}),
+})
+export type VoiceAgentEventBody = z.infer<typeof voiceAgentEventBodySchema>
+
+export const completeVoiceAgentStoryBodySchema = z.object({
+  draftId: z.string().uuid().optional(),
+  audioR2Key: z.string().min(1).optional(),
+  audioDurationMs: z.number().int().positive().max(20 * 60 * 1000).optional(),
+  providerRecordingId: z.string().max(200).optional(),
+  interviewAudioR2Key: z.string().min(1).optional(),
+})
+export type CompleteVoiceAgentStoryBody = z.infer<typeof completeVoiceAgentStoryBodySchema>
+
+export const deepgramVoiceAgentConnectionSchema = z.discriminatedUnion('mode', [
+  z.object({
+    mode: z.literal('direct_websocket'),
+    url: z.literal('wss://agent.deepgram.com/v1/agent/converse').or(z.string().url()),
+    temporaryKey: z.string(),
+    expiresIn: z.number().positive(),
+    expiresAt: z.string().datetime(),
+    authorizationScheme: z.literal('Bearer'),
+    settings: z.record(z.unknown()),
+  }),
+  z.object({
+    mode: z.literal('server_proxy_required'),
+    url: z.literal('wss://agent.deepgram.com/v1/agent/converse').or(z.string().url()),
+    reason: z.string(),
+    settings: z.record(z.unknown()),
+  }),
+])
+export type DeepgramVoiceAgentConnection = z.infer<typeof deepgramVoiceAgentConnectionSchema>
+
+export const createVoiceAgentSessionResponseSchema = z.object({
+  session: voiceAgentSessionSchema,
+  consentRequired: z.boolean(),
+  stageHints: z.record(z.string()),
+  deepgram: deepgramVoiceAgentConnectionSchema,
+})
+export type CreateVoiceAgentSessionResponse = z.infer<
+  typeof createVoiceAgentSessionResponseSchema
+>
+
+export const voiceAgentSessionResponseSchema = z.object({
+  session: voiceAgentSessionSchema,
+})
+export type VoiceAgentSessionResponse = z.infer<typeof voiceAgentSessionResponseSchema>
+
+export const completeVoiceAgentStoryResponseSchema = z.object({
+  session: voiceAgentSessionSchema,
+  draftId: z.string().uuid(),
+})
+export type CompleteVoiceAgentStoryResponse = z.infer<
+  typeof completeVoiceAgentStoryResponseSchema
+>
+
+/**
+ * Phase B MVP: staged MediaRecorder utterances (no browser Deepgram key).
+ * Client records per stage → upload → this endpoint → ASR + LLM stage advance.
+ */
+export const voiceAgentUtteranceBodySchema = z.object({
+  audioR2Key: z.string().min(1).optional(),
+  text: z.string().min(1).max(20_000).optional(),
+  languageHint: z.enum(['en', 'fr', 'auto']).optional(),
+}).refine((v) => Boolean(v.audioR2Key || v.text), {
+  message: 'Provide audioR2Key or text',
+})
+export type VoiceAgentUtteranceBody = z.infer<typeof voiceAgentUtteranceBodySchema>
 
 export const createMessageBodySchema = z.object({
   body: z.string().max(10_000).optional(),

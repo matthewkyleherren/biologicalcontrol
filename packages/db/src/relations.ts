@@ -11,6 +11,7 @@ import {
   processingJobs,
   profiles,
   users,
+  voiceAgentSessions,
   voiceStoryDrafts,
 } from './schema'
 
@@ -22,6 +23,7 @@ export const usersRelations = relations(users, ({one, many}) => ({
   claims: many(personClaims),
   photos: many(photos),
   voiceDrafts: many(voiceStoryDrafts),
+  voiceAgentSessions: many(voiceAgentSessions),
 }))
 
 export const profilesRelations = relations(profiles, ({one}) => ({
@@ -96,10 +98,22 @@ export const photoAttributionsRelations = relations(photoAttributions, ({one}) =
   }),
 }))
 
-export const voiceStoryDraftsRelations = relations(voiceStoryDrafts, ({one}) => ({
+export const voiceStoryDraftsRelations = relations(voiceStoryDrafts, ({one, many}) => ({
   user: one(users, {
     fields: [voiceStoryDrafts.userId],
     references: [users.id],
+  }),
+  agentSessions: many(voiceAgentSessions),
+}))
+
+export const voiceAgentSessionsRelations = relations(voiceAgentSessions, ({one}) => ({
+  user: one(users, {
+    fields: [voiceAgentSessions.userId],
+    references: [users.id],
+  }),
+  draft: one(voiceStoryDrafts, {
+    fields: [voiceAgentSessions.draftId],
+    references: [voiceStoryDrafts.id],
   }),
 }))
 

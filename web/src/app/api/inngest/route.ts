@@ -1,5 +1,7 @@
-import {handle} from 'hono/vercel'
-import {createApi, type ApiEnv} from '@biologicalcontrol/api'
+import {Inngest} from 'inngest'
+import {serve} from 'inngest/next'
+import {processJob, type ApiEnv} from '@biologicalcontrol/api'
+import {tryCreateDb} from '@biologicalcontrol/db'
 
 export const runtime = 'nodejs'
 
@@ -33,10 +35,32 @@ function envFromProcess(): ApiEnv {
   }
 }
 
-const app = createApi({env: envFromProcess()})
+async function processEventJob(jobId: string) {
+  if (!jobId) throw new Error('Inngest event is missing data.jobId')
+  const env = envFromProcess()
+  const db = tryCreateDb(env.DATABASE_URL)
+  if (!db) throw new Error('DATABASE_URL is required to process jobs')
+  return processJob(db, env, jobId)
+}
 
-export const GET = handle(app)
-export const POST = handle(app)
-export const PATCH = handle(app)
-export const DELETE = handle(app)
-export const OPTIONS = handle(app)
+const inngest = new Inngest({id: 'biologicalcontrol'})
+
+const transcribe = inngest.createFunction(
+  {id: 'bc-transcribe', triggers: [{event: 'bc/transcribe'}]},
+  async ({event}) => processEventJob(String(event.data.jobId ?? ''))
+)
+
+const clarityEdit = inngest.createFunction(
+  {id: 'bc-clarity-edit', triggers: [{event: 'bc/clarity_edit'}]},
+  async ({event}) => processEventJob(String(event.data.jobId ?? ''))
+)
+
+const publishStory = inngest.createFunction(
+  {id: 'bc-publish-story', triggers: [{event: 'bc/publish_story'}]},
+  async ({event}) => processEventJob(String(event.data.jobId ?? ''))
+)
+
+export const {GET, POST, PUT} = serve({
+  client: inngest,
+  functions: [transcribe, clarityEdit, publishStory],
+})

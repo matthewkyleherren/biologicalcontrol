@@ -31,6 +31,7 @@ export function photosRoutes(db: Database | null) {
 
     const body = createPhotoBody.parse(await c.req.json())
     const user = await ensureAppUser(db, auth)
+    const env = c.get('env')
 
     const [photo] = await db
       .insert(photos)
@@ -61,7 +62,8 @@ export function photosRoutes(db: Database | null) {
         subjectType: 'photo',
         subjectId: photo!.id,
         provider: 'topaz',
-        inngestEventKey: c.get('env').INNGEST_EVENT_KEY,
+        inngestEventKey: env.INNGEST_EVENT_KEY,
+        env,
       })
     }
 
@@ -70,7 +72,8 @@ export function photosRoutes(db: Database | null) {
       subjectType: 'photo',
       subjectId: photo!.id,
       provider: 'heuristics',
-      inngestEventKey: c.get('env').INNGEST_EVENT_KEY,
+      inngestEventKey: env.INNGEST_EVENT_KEY,
+      env,
     })
 
     return c.json({photo}, 201)

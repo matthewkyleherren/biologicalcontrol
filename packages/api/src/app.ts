@@ -15,6 +15,7 @@ import {chatRoutes} from './routes/chat'
 import {uploadsRoutes} from './routes/uploads'
 import {webhooksRoutes} from './routes/webhooks'
 import {storiesRoutes} from './routes/stories'
+import {voiceAgentRoutes} from './routes/voice-agent'
 
 export type CreateApiOptions = {
   env: ApiEnv
@@ -47,6 +48,7 @@ export function createApi(options: CreateApiOptions) {
   app.route('/', meRoutes(db))
   app.route('/', claimsRoutes(db))
   app.route('/', voiceRoutes(db))
+  app.route('/', voiceAgentRoutes(db))
   app.route('/', photosRoutes(db))
   app.route('/', chatRoutes(db))
   app.route('/', uploadsRoutes())

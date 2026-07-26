@@ -1,6 +1,7 @@
 import type {JobType} from '@biologicalcontrol/shared'
 import type {Database} from '@biologicalcontrol/db'
 import {processingJobs} from '@biologicalcontrol/db'
+import type {ApiEnv} from '../env'
 
 /** Enqueue a processing job. Fires Inngest when INNGEST_EVENT_KEY is set. */
 export async function enqueueJob(
@@ -11,6 +12,7 @@ export async function enqueueJob(
     subjectId: string
     provider?: string
     inngestEventKey?: string
+    env?: ApiEnv
   }
 ) {
   const [job] = await db
@@ -40,6 +42,13 @@ export async function enqueueJob(
       })
     } catch (err) {
       console.error('[jobs] inngest send failed', err)
+    }
+  } else if (input.env) {
+    const {processJob} = await import('./process')
+    try {
+      await processJob(db, input.env, job!.id)
+    } catch (err) {
+      console.error('[jobs] inline processing failed', err)
     }
   }
 

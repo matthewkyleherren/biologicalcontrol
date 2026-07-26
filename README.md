@@ -11,7 +11,7 @@ Community folklore archive for everyone who was part of the IITA Biological Cont
 | `packages/api` | Hono API (`/api/v1/*`) |
 | `packages/db` | Drizzle schema + Neon client |
 | `packages/shared` | Shared Zod types |
-| `docs/` | Research + [backend architecture](docs/backend-architecture.md) |
+| `docs/` | Research + [backend architecture](docs/backend-architecture.md) + [voice story agent spec](docs/voice-story-agent-spec.md) |
 
 ## Local
 
