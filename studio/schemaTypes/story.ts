@@ -124,6 +124,21 @@ export const story = defineType({
       type: 'datetime',
       initialValue: () => new Date().toISOString(),
     }),
+    defineField({
+      name: 'submittedByUserId',
+      title: 'Submitted by (account id)',
+      type: 'string',
+      readOnly: true,
+      description:
+        'The app account that told this story. Set automatically. This is what lets someone see their own submission and its review status — it is deliberately not a person reference, so no name has to be claimed first.',
+    }),
+    defineField({
+      name: 'submittedByName',
+      title: 'Submitted by (name)',
+      type: 'string',
+      readOnly: true,
+      description: 'The name on that account at the time of submission.',
+    }),
   ],
   orderings: [
     {

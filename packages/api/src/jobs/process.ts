@@ -193,7 +193,9 @@ async function processPublishStory(
 
   // Predetermine the document id so retries cannot spawn duplicates even if
   // the mutate response is lost.
-  const predeterminedId = `community.${draft.id.replace(/-/g, '').slice(0, 22)}`
+  // Hyphens, never dots — a dotted `_id` is a Sanity *path*, and public read only covers the
+  // root path, so dotted ids kept approved voice stories invisible to everyone.
+  const predeterminedId = `community-${draft.id.replace(/-/g, '').slice(0, 22)}`
   const doc = {
     _id: predeterminedId,
     _type: 'story',

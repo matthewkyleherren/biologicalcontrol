@@ -4,6 +4,7 @@ type SanityMutation = {
   create?: Record<string, unknown>
   createOrReplace?: Record<string, unknown>
   patch?: Record<string, unknown>
+  delete?: {id: string}
 }
 
 export async function sanityMutate(env: ApiEnv, mutations: SanityMutation[]) {
